@@ -43,8 +43,8 @@ class FCM
   alias send send_notification
 
   def create_notification_key(key_name, project_id, registration_ids = [])
-    post_body = build_post_body(registration_ids,                   operation: 'create',
-                                                                    notification_key_name: key_name)
+    post_body = build_post_body(registration_ids, operation: 'create',
+                                notification_key_name: key_name)
 
     params = {
       body: post_body.to_json,
@@ -55,15 +55,17 @@ class FCM
       }
     }
 
-    response = self.class.post('/notification', params.merge(@client_options))
+    for_uri('https://android.googleapis.com/gcm') do
+      response = self.class.post('/notification', params.merge(@client_options))
+    end
     build_response(response)
   end
   alias create create_notification_key
 
   def add_registration_ids(key_name, project_id, notification_key, registration_ids)
-    post_body = build_post_body(registration_ids,                     operation: 'add',
-                                                                      notification_key_name: key_name,
-                                                                      notification_key: notification_key)
+    post_body = build_post_body(registration_ids, operation: 'add',
+                                notification_key_name: key_name,
+                                notification_key: notification_key)
 
     params = {
       body: post_body.to_json,
@@ -74,15 +76,17 @@ class FCM
       }
     }
 
-    response = self.class.post('/notification', params.merge(@client_options))
+    for_uri('https://android.googleapis.com/gcm') do
+      response = self.class.post('/notification', params.merge(@client_options))
+    end
     build_response(response)
   end
   alias add add_registration_ids
 
   def remove_registration_ids(key_name, project_id, notification_key, registration_ids)
-    post_body = build_post_body(registration_ids,                   operation: 'remove',
-                                                                    notification_key_name: key_name,
-                                                                    notification_key: notification_key)
+    post_body = build_post_body(registration_ids, operation: 'remove',
+                                notification_key_name: key_name,
+                                notification_key: notification_key)
 
     params = {
       body: post_body.to_json,
@@ -93,10 +97,30 @@ class FCM
       }
     }
 
-    response = self.class.post('/notification', params.merge(@client_options))
+    for_uri('https://android.googleapis.com/gcm') do
+      response = self.class.post('/notification', params.merge(@client_options))
+    end
     build_response(response)
   end
   alias remove remove_registration_ids
+
+  def recover_notification_key(key_name, project_id)
+    params = {
+      query: {
+        notification_key_name: key_name
+      },
+      headers: {
+        'Content-Type' => 'application/json',
+        'project_id' => project_id,
+        'Authorization' => "key=#{@api_key}"
+      }
+    }
+
+    for_uri('https://android.googleapis.com/gcm') do
+      response = self.class.post('/notification', params.merge(@client_options))
+    end
+    build_response(response)
+  end
 
   def send_with_notification_key(notification_key, options = {})
     body = { to: notification_key }.merge(options)
@@ -108,6 +132,7 @@ class FCM
         'Content-Type' => 'application/json'
       }
     }
+
     response = self.class.post('/send', params.merge(@client_options))
     build_response(response)
   end
@@ -119,6 +144,13 @@ class FCM
   end
 
   private
+
+  def for_uri(uri)
+    current_uri = self.base_uri
+    self.base_uri uri
+    yield
+    self.base_uri current_uri
+  end
 
   def build_post_body(registration_ids, options = {})
     { registration_ids: registration_ids }.merge(options)
