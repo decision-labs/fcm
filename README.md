@@ -57,16 +57,16 @@ Then you will need a notification key which you can create for a particular `key
 ```ruby
 response = fcm.create(key_name: "appUser-Chris",
                 project_id: "my_project_id",
-                registration_ids:["4", "8", "15", "16", "23", "42"])
+                registration_ids: ["4", "8", "15", "16", "23", "42"])
 ```
 
 ### Send to Notification Key
-Now you can send a message to a particular `notification_key` via the `send_with_notification_key` method. This allows the server to send a single data to multiple app instances  (typically on multiple devices) owned by a single user (instead of sending to some registration tokens). Note: the maximum number of members allowed for a `notification_key` is 20.
+Now you can send a message to a particular `notification_key` via the `send_with_notification_key` method. This allows the server to send a single [data](https://firebase.google.com/docs/cloud-messaging/concept-options#data_messages) payload or/and [notification](https://firebase.google.com/docs/cloud-messaging/concept-options#notifications) payload to multiple app instances (typically on multiple devices) owned by a single user (instead of sending to some registration tokens). Note: the maximum number of members allowed for a `notification_key` is 20.
 
 ```ruby
-response = fcm.send_with_notification_key("notification_key", {
+response = fcm.send_with_notification_key("notification_key",
             data: {score: "3x1"},
-            collapse_key: "updated_score"})
+            collapse_key: "updated_score")
 ```
 
 ### Add/Remove Registration Tokens
@@ -90,15 +90,15 @@ response = fcm.remove(key_name: "appUser-Chris",
 FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-messaging) allows your app server to send a message to multiple devices that have opted in to a particular topic. Based on the publish/subscribe model, topic messaging supports unlimited subscriptions per app. Sending to a topic is very similar to sending to an individual device or to a user group, in the sense that you can use the `fcm.send_with_notification_key()` method where the `noticiation_key` matches the regular expression `"/topics/[a-zA-Z0-9-_.~%]+"`:
 
 ```ruby
-response = fcm.send_with_notification_key("/topics/yourTopic", {
-            data: {message: "This is a FCM Topic Message!"})
+response = fcm.send_with_notification_key("/topics/yourTopic",
+            data: {message: "This is a FCM Topic Message!")
 ```
 
 Or you can use the helper:
 
 ```ruby
-response = fcm.send_to_topic("yourTopic", {
-            data: {message: "This is a FCM Topic Message!"})
+response = fcm.send_to_topic("yourTopic",
+            data: {message: "This is a FCM Topic Message!")
 ```
 
 ## Mobile Clients
