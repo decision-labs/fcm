@@ -2,9 +2,15 @@ require 'spec_helper'
 
 describe FCM do
   let(:send_url) { "#{FCM.base_uri}/send" }
+  let(:group_notification_base_uri) { "https://android.googleapis.com/gcm/notification" }
+  let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
+  let(:registration_ids) { ['42'] }
+  let(:key_name) { 'appUser-Chris' }
+  let(:project_id) { "123456789" } # https://developers.google.com/cloud-messaging/gcm#senderid
+  let(:notification_key) { "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
 
   it 'should raise an error if the api key is not provided' do
-    expect { FCM.new }.to raise_error
+    expect { FCM.new }.to raise_error(ArgumentError)
   end
 
   it 'should raise error if time_to_live is given' do
@@ -12,8 +18,6 @@ describe FCM do
   end
 
   describe 'sending notification' do
-    let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
-    let(:registration_ids) { ['42'] }
     let(:valid_request_body) do
       { registration_ids: registration_ids }
     end
@@ -237,5 +241,158 @@ describe FCM do
         )
       end
     end
+  end
+
+  describe 'sedning group notifications' do
+    # TODO: refactor to should_behave_like
+    subject { FCM.new(api_key) }
+
+    # ref: https://firebase.google.com/docs/cloud-messaging/notifications#managing-device-groups-on-the-app-server
+    context 'create' do
+      let(:valid_request_body) do
+        {
+          registration_ids: registration_ids,
+          operation: "create",
+          notification_key_name: key_name
+        }
+      end
+      let(:valid_request_headers) do
+        {
+          "Authorization" => "key=#{api_key}",
+          "Content-Type" => 'application/json',
+          "Project-Id" => project_id
+        }
+      end
+
+      let(:mock_request_attributes) do
+        {
+          body: valid_request_body.to_json,
+          headers: valid_request_headers
+        }
+      end
+
+      let(:valid_response_body) do
+        { notification_key: "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
+      end
+
+      before do
+        stub_request(:post, group_notification_base_uri).with(
+          mock_request_attributes
+        ).to_return(
+          body: valid_response_body.to_json,
+          headers: {},
+          status: 200
+        )
+      end
+
+      it 'should send a post request' do
+        response = subject.create(key_name, project_id, registration_ids)
+        response.should eq(
+          headers: {},
+          status_code: 200,
+          response: 'success',
+          body: valid_response_body.to_json
+        )
+      end
+    end # create context
+
+    context 'add' do
+      let(:valid_request_body) do
+        {
+          registration_ids: registration_ids,
+          operation: "add",
+          notification_key_name: key_name,
+          notification_key: notification_key
+        }
+      end
+      let(:valid_request_headers) do
+        {
+          "Authorization" => "key=#{api_key}",
+          "Content-Type" => 'application/json',
+          "Project-Id" => project_id
+        }
+      end
+
+      let(:mock_request_attributes) do
+        {
+          body: valid_request_body.to_json,
+          headers: valid_request_headers
+        }
+      end
+
+      let(:valid_response_body) do
+        { notification_key:notification_key }
+      end
+
+      before do
+        stub_request(:post, group_notification_base_uri).with(
+          mock_request_attributes
+        ).to_return(
+          body: valid_response_body.to_json,
+          headers: {},
+          status: 200
+        )
+      end
+
+      it 'should send a post request' do
+        response = subject.add(key_name, project_id, notification_key, registration_ids)
+        response.should eq(
+          headers: {},
+          status_code: 200,
+          response: 'success',
+          body: valid_response_body.to_json
+        )
+      end
+    end # add context
+
+    context 'remove' do
+      let(:valid_request_body) do
+        {
+          registration_ids: registration_ids,
+          operation: "remove",
+          notification_key_name: key_name,
+          notification_key: notification_key
+        }
+      end
+      let(:valid_request_headers) do
+        {
+          "Authorization" => "key=#{api_key}",
+          "Content-Type" => 'application/json',
+          "Project-Id" => project_id
+        }
+      end
+
+      let(:mock_request_attributes) do
+        {
+          body: valid_request_body.to_json,
+          headers: valid_request_headers
+        }
+      end
+
+      let(:valid_response_body) do
+        { notification_key:notification_key }
+      end
+
+      before do
+        stub_request(:post, group_notification_base_uri).with(
+          mock_request_attributes
+        ).to_return(
+          body: valid_response_body.to_json,
+          headers: {},
+          status: 200
+        )
+      end
+
+      it 'should send a post request' do
+        response = subject.remove(key_name, project_id, notification_key, registration_ids)
+        response.should eq(
+          headers: {},
+          status_code: 200,
+          response: 'success',
+          body: valid_response_body.to_json
+        )
+      end
+    end # remove context
+
   end
 end

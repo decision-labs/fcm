@@ -8,6 +8,9 @@ class FCM
   default_timeout 30
   format :json
 
+  # constants
+  GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
+
   attr_accessor :timeout, :api_key
 
   def initialize(api_key, client_options = {})
@@ -55,9 +58,12 @@ class FCM
       }
     }
 
-    for_uri('https://android.googleapis.com/gcm') do
+    response = nil
+
+    for_uri(GROUP_NOTIFICATION_BASE_URI) do
       response = self.class.post('/notification', params.merge(@client_options))
     end
+
     build_response(response)
   end
   alias create create_notification_key
@@ -76,7 +82,9 @@ class FCM
       }
     }
 
-    for_uri('https://android.googleapis.com/gcm') do
+    response = nil
+
+    for_uri(GROUP_NOTIFICATION_BASE_URI) do
       response = self.class.post('/notification', params.merge(@client_options))
     end
     build_response(response)
@@ -97,7 +105,9 @@ class FCM
       }
     }
 
-    for_uri('https://android.googleapis.com/gcm') do
+    response = nil
+
+    for_uri(GROUP_NOTIFICATION_BASE_URI) do
       response = self.class.post('/notification', params.merge(@client_options))
     end
     build_response(response)
@@ -116,7 +126,9 @@ class FCM
       }
     }
 
-    for_uri('https://android.googleapis.com/gcm') do
+    response = nil
+
+    for_uri(GROUP_NOTIFICATION_BASE_URI) do
       response = self.class.post('/notification', params.merge(@client_options))
     end
     build_response(response)
@@ -146,10 +158,10 @@ class FCM
   private
 
   def for_uri(uri)
-    current_uri = self.base_uri
-    self.base_uri uri
+    current_uri = self.class.base_uri
+    self.class.base_uri uri
     yield
-    self.base_uri current_uri
+    self.class.base_uri current_uri
   end
 
   def build_post_body(registration_ids, options = {})
