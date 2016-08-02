@@ -243,7 +243,7 @@ describe FCM do
     end
   end
 
-  describe 'sedning group notifications' do
+  describe 'sending group notifications' do
     # TODO: refactor to should_behave_like
     let(:valid_request_headers) do
       {
