@@ -109,10 +109,14 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 0.0.2
+
+* Fixed group messaging url.
+* Added API to `recover_notification_key`.
+
 ### 0.0.1
 
 * Initial version.
-
 
 ##MIT License
 
