@@ -245,23 +245,33 @@ describe FCM do
 
   describe 'sedning group notifications' do
     # TODO: refactor to should_behave_like
+    let(:valid_request_headers) do
+      {
+        "Authorization" => "key=#{api_key}",
+        "Content-Type" => 'application/json',
+        "Project-Id" => project_id
+      }
+    end
+    let(:valid_response_body) do
+      { notification_key: "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
+    end
+
+    let(:default_valid_request_body) do
+      {
+        registration_ids: registration_ids,
+        operation: "create",
+        notification_key_name: key_name
+      }
+    end
+
     subject { FCM.new(api_key) }
 
     # ref: https://firebase.google.com/docs/cloud-messaging/notifications#managing-device-groups-on-the-app-server
     context 'create' do
       let(:valid_request_body) do
-        {
-          registration_ids: registration_ids,
-          operation: "create",
-          notification_key_name: key_name
-        }
-      end
-      let(:valid_request_headers) do
-        {
-          "Authorization" => "key=#{api_key}",
-          "Content-Type" => 'application/json',
-          "Project-Id" => project_id
-        }
+        default_valid_request_body.merge({
+          operation: "create"
+        })
       end
 
       let(:mock_request_attributes) do
@@ -269,10 +279,6 @@ describe FCM do
           body: valid_request_body.to_json,
           headers: valid_request_headers
         }
-      end
-
-      let(:valid_response_body) do
-        { notification_key: "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
       end
 
       before do
@@ -298,19 +304,10 @@ describe FCM do
 
     context 'add' do
       let(:valid_request_body) do
-        {
-          registration_ids: registration_ids,
+        default_valid_request_body.merge({
           operation: "add",
-          notification_key_name: key_name,
           notification_key: notification_key
-        }
-      end
-      let(:valid_request_headers) do
-        {
-          "Authorization" => "key=#{api_key}",
-          "Content-Type" => 'application/json',
-          "Project-Id" => project_id
-        }
+        })
       end
 
       let(:mock_request_attributes) do
@@ -318,10 +315,6 @@ describe FCM do
           body: valid_request_body.to_json,
           headers: valid_request_headers
         }
-      end
-
-      let(:valid_response_body) do
-        { notification_key:notification_key }
       end
 
       before do
@@ -347,19 +340,10 @@ describe FCM do
 
     context 'remove' do
       let(:valid_request_body) do
-        {
-          registration_ids: registration_ids,
+        default_valid_request_body.merge({
           operation: "remove",
-          notification_key_name: key_name,
           notification_key: notification_key
-        }
-      end
-      let(:valid_request_headers) do
-        {
-          "Authorization" => "key=#{api_key}",
-          "Content-Type" => 'application/json',
-          "Project-Id" => project_id
-        }
+        })
       end
 
       let(:mock_request_attributes) do
@@ -367,10 +351,6 @@ describe FCM do
           body: valid_request_body.to_json,
           headers: valid_request_headers
         }
-      end
-
-      let(:valid_response_body) do
-        { notification_key:notification_key }
       end
 
       before do
