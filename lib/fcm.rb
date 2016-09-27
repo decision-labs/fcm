@@ -189,10 +189,10 @@ class FCM
     build_response(response)
   end
 
-  def batch_subscribe_instance_ids_to_topic topic_name, instance_ids
+  def batch_subscribe_instance_ids_to_topic instance_ids, topic_name
     response = nil
     for_uri(IID_BASE_URI) do
-      response = self.class.post('/v1:batchAdd', body:{
+      pacialdbesponse = self.class.post('/v1:batchAdd', body:{
                                         to: "/topics/#{topic_name}",
                                         registration_tokens: instance_ids
                                 }.to_json,
@@ -205,7 +205,7 @@ class FCM
     build_response(response)
   end
 
-  def batch_unsubscribe_instance_ids_to_topic topic_name, instance_ids
+  def batch_unsubscribe_instance_ids_from_topic instance_ids, topic_name
     response = nil
     for_uri(IID_BASE_URI) do
       response = self.class.post('/v1:batchRemove', body: {
