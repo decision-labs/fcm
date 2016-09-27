@@ -192,7 +192,7 @@ class FCM
   def batch_subscribe_instance_ids_to_topic instance_ids, topic_name
     response = nil
     for_uri(IID_BASE_URI) do
-      pacialdbesponse = self.class.post('/v1:batchAdd', body:{
+      response = self.class.post('/v1:batchAdd', body:{
                                         to: "/topics/#{topic_name}",
                                         registration_tokens: instance_ids
                                 }.to_json,
