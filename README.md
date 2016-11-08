@@ -109,6 +109,10 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 0.0.3
+
+* Added `send_to_condition` method, to send notifications via conditions. 
+
 ### 0.0.2
 
 * Fixed group messaging url.
