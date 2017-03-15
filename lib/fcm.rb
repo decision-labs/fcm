@@ -129,7 +129,7 @@ class FCM
     response = nil
 
     for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
+      response = self.class.get('/notification', params.merge(@client_options))
     end
     build_response(response)
   end
