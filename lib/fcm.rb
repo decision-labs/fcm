@@ -165,7 +165,8 @@ class FCM
   end
 
   def build_post_body(registration_ids, options = {})
-    { registration_ids: registration_ids }.merge(options)
+    ids = registration_ids.is_a?(String) ? [registration_ids] : registration_ids
+    { registration_ids: ids }.merge(options)
   end
 
   def build_response(response, registration_ids = [])

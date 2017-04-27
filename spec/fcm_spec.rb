@@ -4,6 +4,7 @@ describe FCM do
   let(:send_url) { "#{FCM.base_uri}/send" }
   let(:group_notification_base_uri) { "https://android.googleapis.com/gcm/notification" }
   let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
+  let(:registration_id) { '42' }
   let(:registration_ids) { ['42'] }
   let(:key_name) { 'appUser-Chris' }
   let(:project_id) { "123456789" } # https://developers.google.com/cloud-messaging/gcm#senderid
@@ -20,6 +21,9 @@ describe FCM do
   describe 'sending notification' do
     let(:valid_request_body) do
       { registration_ids: registration_ids }
+    end
+    let(:valid_request_body_with_string) do
+      { registration_ids: registration_id }
     end
     let(:valid_request_headers) do
       {
@@ -40,6 +44,17 @@ describe FCM do
       )
     end
 
+    let(:stub_fcm_send_request_with_string) do
+      stub_request(:post, send_url).with(
+        body: valid_request_body_with_string.to_json,
+        headers: valid_request_headers
+      ).to_return(
+        body: '{}',
+        headers: {},
+        status: 200
+      )
+    end
+
     let(:stub_fcm_send_request_with_basic_auth) do
       uri = URI.parse(send_url)
       uri.user = 'a'
@@ -49,12 +64,19 @@ describe FCM do
 
     before(:each) do
       stub_fcm_send_request
+      stub_fcm_send_request_with_string
       stub_fcm_send_request_with_basic_auth
     end
 
     it 'should send notification using POST to FCM server' do
       fcm = FCM.new(api_key)
       fcm.send(registration_ids).should eq(response: 'success', body: '{}', headers: {}, status_code: 200, canonical_ids: [], not_registered_ids: [])
+      stub_fcm_send_request.should have_been_made.times(1)
+    end
+
+    it 'should send notification using POST to FCM if id provided as string' do
+      fcm = FCM.new(api_key)
+      fcm.send(registration_id).should eq(response: 'success', body: '{}', headers: {}, status_code: 200, canonical_ids: [], not_registered_ids: [])
       stub_fcm_send_request.should have_been_made.times(1)
     end
 
