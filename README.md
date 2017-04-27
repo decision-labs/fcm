@@ -4,7 +4,7 @@
 The FCM gem lets your ruby backend send notifications to Android and iOS devices via [
 Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/).
 
-##Installation
+## Installation
 
     $ gem install fcm
 
@@ -14,7 +14,7 @@ or in your `Gemfile` just include it:
 gem 'fcm'
 ```
 
-##Requirements
+## Requirements
 
 For Android you will need a device running 2.3 (or newer) that also have the Google Play Store app installed, or an emulator running Android 2.3 with Google APIs. iOS devices are also supported.
 
@@ -25,7 +25,7 @@ One of the following, tested Ruby versions:
 * `2.2.5`
 * `2.3.1`
 
-##Usage
+## Usage
 
 For your server to send a message to one or more devices, you must first initialise a new `FCM` class with your Firebase server Api key, and then call the `send` method on this and give it 1 or more (up to 1000) registration tokens as an array of strings. You can also optionally send further [HTTP message parameters](https://firebase.google.com/docs/cloud-messaging/http-server-ref) like `data` or `time_to_live` etc. as a hash via the second optional argument to `send`.
 
