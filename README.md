@@ -45,7 +45,7 @@ options = {data: {score: "123"}, collapse_key: "updated_score"}
 response = fcm.send(registration_ids, options)
 ```
 
-Currently `response` is just a hash containing the response `body`, `headers` and `status`. Check [here](https://firebase.google.com/docs/cloud-messaging/server#response) to see how to interpret the responses.
+Currently `response` is just a hash containing the response `body`, `headers` and `status_code`. Check [here](https://firebase.google.com/docs/cloud-messaging/server#response) to see how to interpret the responses.
 
 ## Device Group Messaging
 
