@@ -87,7 +87,7 @@ response = fcm.remove(key_name: "appUser-Chris",
 
 ## Send Messages to Topics
 
-FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-messaging) allows your app server to send a message to multiple devices that have opted in to a particular topic. Based on the publish/subscribe model, topic messaging supports unlimited subscriptions per app. Sending to a topic is very similar to sending to an individual device or to a user group, in the sense that you can use the `fcm.send_with_notification_key()` method where the `noticiation_key` matches the regular expression `"/topics/[a-zA-Z0-9-_.~%]+"`:
+FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-messaging) allows your app server to send a message to multiple devices that have opted in to a particular topic. Based on the publish/subscribe model, topic messaging supports unlimited subscriptions per app. Sending to a topic is very similar to sending to an individual device or to a user group, in the sense that you can use the `fcm.send_with_notification_key()` method where the `notification_key` matches the regular expression `"/topics/[a-zA-Z0-9-_.~%]+"`:
 
 ```ruby
 response = fcm.send_with_notification_key("/topics/yourTopic",
