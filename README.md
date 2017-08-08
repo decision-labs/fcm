@@ -27,18 +27,18 @@ One of the following, tested Ruby versions:
 
 ## Usage
 
-For your server to send a message to one or more devices, you must first initialise a new `FCM` class with your Firebase server Api key, and then call the `send` method on this and give it 1 or more (up to 1000) registration tokens as an array of strings. You can also optionally send further [HTTP message parameters](https://firebase.google.com/docs/cloud-messaging/http-server-ref) like `data` or `time_to_live` etc. as a hash via the second optional argument to `send`.
+For your server to send a message to one or more devices, you must first initialise a new `FCM` class with your Firebase Cloud Messaging server key, and then call the `send` method on this and give it 1 or more (up to 1000) registration tokens as an array of strings. You can also optionally send further [HTTP message parameters](https://firebase.google.com/docs/cloud-messaging/http-server-ref) like `data` or `time_to_live` etc. as a hash via the second optional argument to `send`.
 
 Example sending notifications:
 
 ```ruby
 require 'fcm'
 
-fcm = FCM.new("my_api_key")
+fcm = FCM.new("my_server_key")
 # you can set option parameters in here
 #  - all options are pass to HTTParty method arguments
 #  - ref: https://github.com/jnunemaker/httparty/blob/master/lib/httparty.rb#L29-L60
-#  fcm = FCM.new("my_api_key", timeout: 3)
+#  fcm = FCM.new("my_server_key", timeout: 3)
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
 options = {data: {score: "123"}, collapse_key: "updated_score"}
