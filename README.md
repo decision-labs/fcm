@@ -101,6 +101,38 @@ response = fcm.send_to_topic("yourTopic",
             data: {message: "This is a FCM Topic Message!")
 ```
 
+### Sending to Multiple Topics
+
+To send to combinations of multiple topics, the FCM [docs](https://firebase.google.com/docs/cloud-messaging/send-message#send_messages_to_topics_2) require that you set a **condition** key (instead of the `to:` key) to a boolean condition that specifies the target topics. For example, to send messages to devices that subscribed to _TopicA_ and either _TopicB_ or _TopicC_:
+
+```
+'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)
+```
+
+FCM first evaluates any conditions in parentheses, and then evaluates the expression from left to right. In the above expression, a user subscribed to any single topic does not receive the message. Likewise, a user who does not subscribe to TopicA does not receive the message. These combinations do receive it:
+
+- TopicA and TopicB
+- TopicA and TopicC
+
+You can include up to five topics in your conditional expression, and parentheses are supported. Supported operators: `&&`, `||`, `!`. Note the usage for !:
+
+```
+!('TopicA' in topics)
+```
+
+With this expression, any app instances that are not subscribed to TopicA, including app instances that are not subscribed to any topic, receive the message.
+
+The `send_to_topic_condition` method within this library allows you to specicy a condition of multiple topics to which to send to the data payload.
+
+```ruby
+response = fcm.send_to_topic_condition(
+  "'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)",
+  data: {
+    message: "This is an FCM Topic Message sent to a condition!"
+  }
+)
+```
+
 ## Mobile Clients
 
 You can find a guide to implement an Android Client app to receive notifications here: [Set up a FCM Client App on Android](https://firebase.google.com/docs/cloud-messaging/android/client).
