@@ -140,11 +140,6 @@ class FCM
     execute_notification(body)
   end
 
-  def send_with_condition_key(condition_key, options = {})
-    body = { condition: condition_key }.merge(options)
-    execute_notification(body)
-  end
-
   def send_to_topic(topic, options = {})
     if topic =~ TOPIC_REGEX
       send_with_notification_key('/topics/' + topic, options)
@@ -153,7 +148,8 @@ class FCM
 
   def send_to_topic_condition(condition, options = {})
     if validate_condition?(condition)
-      send_with_condition_key(condition, options)
+      body = { condition: condition }.merge(options)
+      execute_notification(body)
     end
   end
 
