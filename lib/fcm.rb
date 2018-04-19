@@ -141,7 +141,7 @@ class FCM
   end
 
   def send_to_topic(topic, options = {})
-    if topic =~ TOPIC_REGEX
+    if topic.gsub(TOPIC_REGEX, "").length == 0
       send_with_notification_key('/topics/' + topic, options)
     end
   end
@@ -247,6 +247,6 @@ class FCM
 
   def validate_condition_topics?(condition)
     topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
-    topics.all? { |topic| topic =~ TOPIC_REGEX }
+    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
   end
 end
