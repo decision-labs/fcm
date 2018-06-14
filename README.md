@@ -41,6 +41,7 @@ fcm = FCM.new("my_server_key")
 #  fcm = FCM.new("my_server_key", timeout: 3)
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
+# See https://developers.google.com/cloud-messaging/http for all available options.
 options = { "notification": {
               "title": "Portugal vs. Denmark",
               "text": "5 to 1"
