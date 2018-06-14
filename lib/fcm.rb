@@ -18,6 +18,7 @@ class FCM
     @client_options = client_options
   end
 
+  # See https://developers.google.com/cloud-messaging/http for more details.
   # { "notification": {
   #  "title": "Portugal vs. Denmark",
   #  "text": "5 to 1"
