@@ -41,7 +41,12 @@ fcm = FCM.new("my_server_key")
 #  fcm = FCM.new("my_server_key", timeout: 3)
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
-options = {data: {score: "123"}, collapse_key: "updated_score"}
+options = { "notification": {
+              "title": "Portugal vs. Denmark",
+              "text": "5 to 1"
+          },
+          "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
+}
 response = fcm.send(registration_ids, options)
 ```
 
