@@ -18,18 +18,17 @@ class FCM
     @client_options = client_options
   end
 
-  # {
-  #   "collapse_key": "score_update",
-  #   "time_to_live": 108,
-  #   "delay_while_idle": true,
-  #   "registration_ids": ["4", "8", "15", "16", "23", "42"],
-  #   "data" : {
-  #     "score": "5x1",
-  #     "time": "15:10"
-  #   }
+  # { "notification": {
+  #  "title": "Portugal vs. Denmark",
+  #  "text": "5 to 1"
+  # },
+  # "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
   # }
   # fcm = FCM.new("API_KEY")
-  # fcm.send(registration_ids: ["4sdsx", "8sdsd"], {data: {score: "5x1"}})
+  # fcm.send(
+  #    registration_ids: ["4sdsx", "8sdsd"], 
+  #    { "notification": { "title": "Portugal vs. Denmark", "text": "5 to 1" }, "to" : "bk3RNwTe3HdFQ3P1..." }
+  # )
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
 
