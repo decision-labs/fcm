@@ -10,6 +10,7 @@ class FCM
 
   # constants
   GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
+  TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
   attr_accessor :timeout, :api_key
 
@@ -136,22 +137,19 @@ class FCM
 
   def send_with_notification_key(notification_key, options = {})
     body = { to: notification_key }.merge(options)
-
-    params = {
-      body: body.to_json,
-      headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-Type' => 'application/json'
-      }
-    }
-
-    response = self.class.post('/send', params.merge(@client_options))
-    build_response(response)
+    execute_notification(body)
   end
 
   def send_to_topic(topic, options = {})
-    if topic =~ /[a-zA-Z0-9\-_.~%]+/
+    if topic.gsub(TOPIC_REGEX, "").length == 0
       send_with_notification_key('/topics/' + topic, options)
+    end
+  end
+
+  def send_to_topic_condition(condition, options = {})
+    if validate_condition?(condition)
+      body = { condition: condition }.merge(options)
+      execute_notification(body)
     end
   end
 
@@ -214,11 +212,41 @@ class FCM
     not_registered_ids
   end
 
+  def execute_notification(body)
+    params = {
+      body: body.to_json,
+      headers: {
+        'Authorization' => "key=#{@api_key}",
+        'Content-Type' => 'application/json'
+      }
+    }
+
+    response = self.class.post('/send', params.merge(@client_options))
+    build_response(response)
+  end
+
   def has_canonical_id?(result)
     !result['registration_id'].nil?
   end
 
   def is_not_registered?(result)
     result['error'] == 'NotRegistered'
+  end
+
+  def validate_condition?(condition)
+    validate_condition_format?(condition) && validate_condition_topics?(condition)
+  end
+
+  def validate_condition_format?(condition)
+    bad_characters = condition.gsub(
+      /(topics|in|\s|\(|\)|(&&)|[!]|(\|\|)|'([a-zA-Z0-9\-_.~%]+)')/,
+      ""
+    )
+    bad_characters.length == 0
+  end
+
+  def validate_condition_topics?(condition)
+    topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
+    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
   end
 end
