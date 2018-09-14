@@ -150,11 +150,11 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 * Initial version.
 
-##MIT License
+## MIT License
 
 * Copyright (c) 2016 Kashif Rasul and Shoaib Burq. See LICENSE.txt for details.
 
-##Many thanks to all the contributors
+## Many thanks to all the contributors
 
 * [Contributors](https://github.com/spacialdb/fcm/contributors)
 
