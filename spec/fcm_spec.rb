@@ -9,6 +9,11 @@ describe FCM do
   let(:key_name) { 'appUser-Chris' }
   let(:project_id) { "123456789" } # https://developers.google.com/cloud-messaging/gcm#senderid
   let(:notification_key) { "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
+  let(:valid_topic) { "TopicA" }
+  let(:invalid_topic) { "TopicA$" }
+  let(:valid_condition) { "'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)" }
+  let(:invalid_condition) { "'TopicA' in topics and some other text ('TopicB' in topics || 'TopicC' in topics)" }
+  let(:invalid_condition_topic) { "'TopicA$' in topics" }
 
   it 'should raise an error if the api key is not provided' do
     expect { FCM.new }.to raise_error(ArgumentError)
@@ -93,6 +98,76 @@ describe FCM do
         fcm = FCM.new(api_key)
         fcm.send(registration_ids, data: { score: '5x1', time: '15:10' })
         stub_with_data.should have_been_requested
+      end
+    end
+
+    context "sending notification to a topic" do
+      let!(:stub_with_valid_topic) do
+        stub_request(:post, send_url)
+          .with(body: '{"to":"/topics/TopicA","data":{"score":"5x1","time":"15:10"}}',
+                headers: valid_request_headers)
+          .to_return(status: 200, body: '', headers: {})
+      end
+      let!(:stub_with_invalid_topic) do
+        stub_request(:post, send_url)
+          .with(body: '{"condition":"/topics/TopicA$","data":{"score":"5x1","time":"15:10"}}',
+                headers: valid_request_headers)
+          .to_return(status: 200, body: '', headers: {})
+      end
+
+      describe "#send_to_topic" do
+        it 'should send the data in a post request to fcm' do
+          fcm = FCM.new(api_key)
+          fcm.send_to_topic(valid_topic, data: { score: '5x1', time: '15:10' })
+          stub_with_valid_topic.should have_been_requested
+        end
+
+        it 'should not send to invalid topics' do
+          fcm = FCM.new(api_key)
+          fcm.send_to_topic(invalid_topic, data: { score: '5x1', time: '15:10' })
+          stub_with_invalid_topic.should_not have_been_requested
+        end
+      end
+    end
+
+    context "sending notification to a topic condition" do
+      let!(:stub_with_valid_condition) do
+        stub_request(:post, send_url)
+          .with(body: '{"condition":"\'TopicA\' in topics && (\'TopicB\' in topics || \'TopicC\' in topics)","data":{"score":"5x1","time":"15:10"}}',
+                headers: valid_request_headers)
+          .to_return(status: 200, body: '', headers: {})
+      end
+      let!(:stub_with_invalid_condition) do
+        stub_request(:post, send_url)
+          .with(body: '{"condition":"\'TopicA\' in topics and some other text (\'TopicB\' in topics || \'TopicC\' in topics)","data":{"score":"5x1","time":"15:10"}}',
+                headers: valid_request_headers)
+          .to_return(status: 200, body: '', headers: {})
+      end
+      let!(:stub_with_invalid_condition_topic) do
+        stub_request(:post, send_url)
+          .with(body: '{"condition":"\'TopicA$\' in topics","data":{"score":"5x1","time":"15:10"}}',
+                headers: valid_request_headers)
+          .to_return(status: 200, body: '', headers: {})
+      end
+
+      describe "#send_to_topic_condition" do
+        it 'should send the data in a post request to fcm' do
+          fcm = FCM.new(api_key)
+          fcm.send_to_topic_condition(valid_condition, data: { score: '5x1', time: '15:10' })
+          stub_with_valid_condition.should have_been_requested
+        end
+
+        it 'should not send to invalid conditions' do
+          fcm = FCM.new(api_key)
+          fcm.send_to_topic_condition(invalid_condition, data: { score: '5x1', time: '15:10' })
+          stub_with_invalid_condition.should_not have_been_requested
+        end
+
+        it 'should not send to invalid topics in a condition' do
+          fcm = FCM.new(api_key)
+          fcm.send_to_topic_condition(invalid_condition_topic, data: { score: '5x1', time: '15:10' })
+          stub_with_invalid_condition_topic.should_not have_been_requested
+        end
       end
     end
 
@@ -395,7 +470,6 @@ describe FCM do
         )
       end
     end # remove context
-
   end
 
   describe 'subscribing to a topic' do

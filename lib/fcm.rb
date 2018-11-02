@@ -11,6 +11,7 @@ class FCM
   # constants
   GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
   INSTANCE_ID_API = 'https://iid.googleapis.com/iid/v1'
+  TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
   attr_accessor :timeout, :api_key
 
@@ -19,18 +20,18 @@ class FCM
     @client_options = client_options
   end
 
-  # {
-  #   "collapse_key": "score_update",
-  #   "time_to_live": 108,
-  #   "delay_while_idle": true,
-  #   "registration_ids": ["4", "8", "15", "16", "23", "42"],
-  #   "data" : {
-  #     "score": "5x1",
-  #     "time": "15:10"
-  #   }
+  # See https://developers.google.com/cloud-messaging/http for more details.
+  # { "notification": {
+  #  "title": "Portugal vs. Denmark",
+  #  "text": "5 to 1"
+  # },
+  # "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
   # }
   # fcm = FCM.new("API_KEY")
-  # fcm.send(registration_ids: ["4sdsx", "8sdsd"], {data: {score: "5x1"}})
+  # fcm.send(
+  #    registration_ids: ["4sdsx", "8sdsd"], 
+  #    { "notification": { "title": "Portugal vs. Denmark", "text": "5 to 1" }, "to" : "bk3RNwTe3HdFQ3P1..." }
+  # )
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
 
@@ -137,17 +138,7 @@ class FCM
 
   def send_with_notification_key(notification_key, options = {})
     body = { to: notification_key }.merge(options)
-
-    params = {
-      body: body.to_json,
-      headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-Type' => 'application/json'
-      }
-    }
-
-    response = self.class.post('/send', params.merge(@client_options))
-    build_response(response)
+    execute_notification(body)
   end
 
   def topic_subscription(topic, registration_id)
@@ -197,8 +188,15 @@ class FCM
 
 
   def send_to_topic(topic, options = {})
-    if topic =~ /[a-zA-Z0-9\-_.~%]+/
+    if topic.gsub(TOPIC_REGEX, "").length == 0
       send_with_notification_key('/topics/' + topic, options)
+    end
+  end
+
+  def send_to_topic_condition(condition, options = {})
+    if validate_condition?(condition)
+      body = { condition: condition }.merge(options)
+      execute_notification(body)
     end
   end
 
@@ -261,11 +259,41 @@ class FCM
     not_registered_ids
   end
 
+  def execute_notification(body)
+    params = {
+      body: body.to_json,
+      headers: {
+        'Authorization' => "key=#{@api_key}",
+        'Content-Type' => 'application/json'
+      }
+    }
+
+    response = self.class.post('/send', params.merge(@client_options))
+    build_response(response)
+  end
+
   def has_canonical_id?(result)
     !result['registration_id'].nil?
   end
 
   def is_not_registered?(result)
     result['error'] == 'NotRegistered'
+  end
+
+  def validate_condition?(condition)
+    validate_condition_format?(condition) && validate_condition_topics?(condition)
+  end
+
+  def validate_condition_format?(condition)
+    bad_characters = condition.gsub(
+      /(topics|in|\s|\(|\)|(&&)|[!]|(\|\|)|'([a-zA-Z0-9\-_.~%]+)')/,
+      ""
+    )
+    bad_characters.length == 0
+  end
+
+  def validate_condition_topics?(condition)
+    topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
+    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
   end
 end

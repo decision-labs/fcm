@@ -41,7 +41,14 @@ fcm = FCM.new("my_server_key")
 #  fcm = FCM.new("my_server_key", timeout: 3)
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
-options = {data: {score: "123"}, collapse_key: "updated_score"}
+
+# See https://developers.google.com/cloud-messaging/http for all available options.
+options = { "notification": {
+              "title": "Portugal vs. Denmark",
+              "text": "5 to 1"
+          },
+          "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
+}
 response = fcm.send(registration_ids, options)
 ```
 
@@ -91,14 +98,46 @@ FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-mes
 
 ```ruby
 response = fcm.send_with_notification_key("/topics/yourTopic",
-            data: {message: "This is a FCM Topic Message!")
+            data: {message: "This is a FCM Topic Message!"})
 ```
 
 Or you can use the helper:
 
 ```ruby
 response = fcm.send_to_topic("yourTopic",
-            data: {message: "This is a FCM Topic Message!")
+            data: {message: "This is a FCM Topic Message!"})
+```
+
+### Sending to Multiple Topics
+
+To send to combinations of multiple topics, the FCM [docs](https://firebase.google.com/docs/cloud-messaging/send-message#send_messages_to_topics_2) require that you set a **condition** key (instead of the `to:` key) to a boolean condition that specifies the target topics. For example, to send messages to devices that subscribed to _TopicA_ and either _TopicB_ or _TopicC_:
+
+```
+'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)
+```
+
+FCM first evaluates any conditions in parentheses, and then evaluates the expression from left to right. In the above expression, a user subscribed to any single topic does not receive the message. Likewise, a user who does not subscribe to TopicA does not receive the message. These combinations do receive it:
+
+- TopicA and TopicB
+- TopicA and TopicC
+
+You can include up to five topics in your conditional expression, and parentheses are supported. Supported operators: `&&`, `||`, `!`. Note the usage for !:
+
+```
+!('TopicA' in topics)
+```
+
+With this expression, any app instances that are not subscribed to TopicA, including app instances that are not subscribed to any topic, receive the message.
+
+The `send_to_topic_condition` method within this library allows you to specicy a condition of multiple topics to which to send to the data payload.
+
+```ruby
+response = fcm.send_to_topic_condition(
+  "'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)",
+  data: {
+    message: "This is an FCM Topic Message sent to a condition!"
+  }
+)
 ```
 
 ## Subscribe the client app to a topic
@@ -140,11 +179,11 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 * Initial version.
 
-##MIT License
+## MIT License
 
 * Copyright (c) 2016 Kashif Rasul and Shoaib Burq. See LICENSE.txt for details.
 
-##Many thanks to all the contributors
+## Many thanks to all the contributors
 
 * [Contributors](https://github.com/spacialdb/fcm/contributors)
 
