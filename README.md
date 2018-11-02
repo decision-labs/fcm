@@ -91,14 +91,14 @@ FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-mes
 
 ```ruby
 response = fcm.send_with_notification_key("/topics/yourTopic",
-            data: {message: "This is a FCM Topic Message!")
+            data: {message: "This is a FCM Topic Message!"})
 ```
 
 Or you can use the helper:
 
 ```ruby
 response = fcm.send_to_topic("yourTopic",
-            data: {message: "This is a FCM Topic Message!")
+            data: {message: "This is a FCM Topic Message!"})
 ```
 
 ### Sending to Multiple Topics
