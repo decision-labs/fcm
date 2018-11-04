@@ -64,9 +64,10 @@ With [device group messaging](https://firebase.google.com/docs/cloud-messaging/n
 Then you will need a notification key which you can create for a particular `key_name` which needs to be uniquely named per app in case you have multiple apps for the same `project_id`. This ensures that notifications only go to the intended target app. The `create` method will do this and return the token `notification_key`, that represents the device group, in the response:
 
 ```ruby
-response = fcm.create(key_name: "appUser-Chris",
+params = {key_name: "appUser-Chris",
                 project_id: "my_project_id",
-                registration_ids: ["4", "8", "15", "16", "23", "42"])
+                registration_ids: ["4", "8", "15", "16", "23", "42"]}
+response = fcm.create(*params.values)
 ```
 
 ### Send to Notification Key
