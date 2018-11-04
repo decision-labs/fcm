@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "fcm"
-  s.version     = "0.0.3"
+  s.version     = "0.0.4"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Kashif Rasul", "Shoaib Burq"]
   s.email       = ["kashif@spacialdb.com", "shoaib@spacialdb.com"]
@@ -21,5 +21,5 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_runtime_dependency('httparty', '~> 0')
+  s.add_runtime_dependency('httparty', '~> 0.10.0')
 end
