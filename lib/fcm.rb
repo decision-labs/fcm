@@ -10,6 +10,7 @@ class FCM
 
   # constants
   GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
+  INSTANCE_ID_API = 'https://iid.googleapis.com/iid/v1'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
   attr_accessor :timeout, :api_key
@@ -139,6 +140,52 @@ class FCM
     body = { to: notification_key }.merge(options)
     execute_notification(body)
   end
+
+  def topic_subscription(topic, registration_id)
+    params = {
+      headers: {
+          'Authorization' => "key=#{@api_key}",
+          'Content-Type' => 'application/json'
+      }
+    }
+
+    response = nil
+
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post("/#{registration_id}/rel/topics/#{topic}", params)
+    end
+
+    build_response(response)
+  end
+
+  def batch_topic_subscription(topic, registration_ids)
+    manage_topics_relationship(topic, registration_ids, 'Add')
+  end
+
+  def batch_topic_unsubscription(topic, registration_ids)
+    manage_topics_relationship(topic, registration_ids, 'Remove')
+  end
+
+  def manage_topics_relationship(topic, registration_ids, action)
+    body = { to: "/topics/#{topic}", registration_tokens: registration_ids }
+    params = {
+        body: body.to_json,
+        headers: {
+            'Authorization' => "key=#{@api_key}",
+            'Content-Type' => 'application/json'
+        }
+    }
+
+    response = nil
+
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post("/:batch#{action}", params)
+    end
+
+    build_response(response)
+  end
+
+
 
   def send_to_topic(topic, options = {})
     if topic.gsub(TOPIC_REGEX, "").length == 0

@@ -140,6 +140,28 @@ response = fcm.send_to_topic_condition(
 )
 ```
 
+## Subscribe the client app to a topic
+
+Given a registration token and a topic name, you can add the token to the topic using the [Google Instance ID server API](https://developers.google.com/instance-id/reference/server). 
+
+```ruby
+topic = "YourTopic"
+registration_id= "12" # a client registration tokens
+response = fcm.topic_subscription(topic, registration_id)
+```
+
+Or you can manage relationship maps for multiple app instances [Google Instance ID server API. Manage relationship](https://developers.google.com/instance-id/reference/server#manage_relationship_maps_for_multiple_app_instances)
+
+```ruby
+topic = "YourTopic"
+registration_ids= ["4", "8", "15", "16", "23", "42"] # an array of one or more client registration tokens
+response = fcm.batch_topic_subscription(topic, registration_ids)
+# or unsubscription
+response = fcm.batch_topic_unsubscription(topic, registration_ids)
+
+```
+
+
 ## Mobile Clients
 
 You can find a guide to implement an Android Client app to receive notifications here: [Set up a FCM Client App on Android](https://firebase.google.com/docs/cloud-messaging/android/client).

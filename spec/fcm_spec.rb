@@ -471,4 +471,8 @@ describe FCM do
       end
     end # remove context
   end
+
+  describe 'subscribing to a topic' do
+    # TODO
+  end
 end
