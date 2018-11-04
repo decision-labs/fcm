@@ -29,7 +29,7 @@ class FCM
   # }
   # fcm = FCM.new("API_KEY")
   # fcm.send(
-  #    registration_ids: ["4sdsx", "8sdsd"], 
+  #    ["4sdsx", "8sdsd"], # registration_ids
   #    { "notification": { "title": "Portugal vs. Denmark", "text": "5 to 1" }, "to" : "bk3RNwTe3HdFQ3P1..." }
   # )
   def send_notification(registration_ids, options = {})
