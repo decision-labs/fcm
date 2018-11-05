@@ -22,9 +22,11 @@ For Android you will need a device running 2.3 (or newer) that also have the Goo
 One of the following, tested Ruby versions:
 
 - `2.0.0`
-- `2.1.9`
-- `2.2.5`
-- `2.3.1`
+- `2.1.10`
+- `2.2.10`
+- `2.3.8`
+- `2.4.5`
+- `2.5.3`
 
 ## Usage
 
