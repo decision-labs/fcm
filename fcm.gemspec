@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "fcm"
-  s.version     = "0.0.3"
+  s.version     = "0.0.6"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Kashif Rasul", "Shoaib Burq"]
   s.email       = ["kashif@spacialdb.com", "shoaib@spacialdb.com"]
@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.description = %q{fcm provides ruby bindings to Firebase Cloud Messaging (FCM) a cross-platform messaging solution that lets you reliably deliver messages and notifications at no cost to Android, iOS or Web browsers.}
   s.license     = "MIT"
 
-  s.required_ruby_version     = '>= 1.9.3'
+  s.required_ruby_version     = '>= 2.0.0'
 
   s.rubyforge_project = "fcm"
 
@@ -21,6 +21,5 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_dependency('httparty')
-  s.add_dependency('json')
+  s.add_runtime_dependency('httparty', '~> 0.10', '>= 0.10.0')
 end

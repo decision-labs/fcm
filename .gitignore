@@ -48,3 +48,4 @@ specifications
 Gemfile.lock
 .rvmrc
 spec/reports
+*.gem
