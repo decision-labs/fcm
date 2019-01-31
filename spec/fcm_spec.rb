@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe FCM do
-  let(:send_url) { "#{FCM.base_uri}/send" }
+  let(:send_url) { "#{FCM::BASE_URI}/fcm/send" }
   let(:group_notification_base_uri) { "https://android.googleapis.com/gcm/notification" }
   let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
   let(:registration_id) { '42' }
@@ -254,7 +254,7 @@ describe FCM do
 
         it 'should not send notification due to 599' do
           subject.send(registration_ids).should eq(body: '{"body-key" => "Body value"}',
-                                                   headers: { 'header-key' => ['Header value'] },
+                                                   headers: { 'header-key' => 'Header value' },
                                                    response: 'There was an internal error in the FCM server while trying to process the request.',
                                                    status_code: 599)
         end
