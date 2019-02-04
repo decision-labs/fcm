@@ -9,7 +9,6 @@ class FCM
 
   # constants
   GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com'
-  IID_BASE_URI = 'https://iid.googleapis.com'
   INSTANCE_ID_API = 'https://iid.googleapis.com'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
@@ -146,7 +145,7 @@ class FCM
       query: options
     }
     
-    for_uri(IID_BASE_URI) do |connection|
+    for_uri(INSTANCE_ID_API) do |connection|
       response = connection.get('/iid/info/'+iid_token, params)
       build_response(response)
     end
