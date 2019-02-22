@@ -10,7 +10,7 @@ class FCM
 
   # constants
   GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
-  INSTANCE_ID_API = 'https://iid.googleapis.com/iid/v1'
+  INSTANCE_ID_API = 'https://iid.googleapis.com/iid'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
   attr_accessor :timeout, :api_key
@@ -152,7 +152,7 @@ class FCM
     response = nil
 
     for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/#{registration_id}/rel/topics/#{topic}", params)
+      response = self.class.post("/v1/#{registration_id}/rel/topics/#{topic}", params)
     end
 
     build_response(response)
@@ -179,7 +179,7 @@ class FCM
     response = nil
 
     for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/:batch#{action}", params)
+      response = self.class.post("/v1/:batch#{action}", params)
     end
 
     build_response(response)
@@ -191,6 +191,71 @@ class FCM
     if topic.gsub(TOPIC_REGEX, "").length == 0
       send_with_notification_key('/topics/' + topic, options)
     end
+  end
+
+  def get_instance_id_info iid_token, options={}
+    response = nil
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.get('/info/'+iid_token, query: options, headers: {
+        'Authorization' => "key=#{@api_key}",
+        'Content-type' => 'application/json'
+      })
+    end
+    build_response(response)
+  end
+
+  def subscribe_instance_id_to_topic iid_token, topic_name
+    response = nil
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post('/v1/'+iid_token+'/rel/topics/'+topic_name, headers: {
+        'Authorization' => "key=#{@api_key}",
+        'Content-type' => 'application/json'
+      })
+    end
+    build_response(response)
+  end
+
+  def unsubscribe_instance_id_from_topic iid_token, topic_name
+    response = nil
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post('/v1/'+iid_token+'/rel/topics/'+topic_name, headers: {
+        'Authorization' => "key=#{@api_key}",
+        'Content-type' => 'application/json'
+      })
+    end
+    build_response(response)
+  end
+
+  def batch_subscribe_instance_ids_to_topic instance_ids, topic_name
+    response = nil
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post('/v1:batchAdd', body:{
+                                        to: "/topics/#{topic_name}",
+                                        registration_tokens: instance_ids
+                                }.to_json,
+                                 headers: {
+                                'Authorization' => "key=#{@api_key}",
+                                'Content-type' => 'application/json'
+                              }
+                                )
+    end
+    build_response(response)
+  end
+
+  def batch_unsubscribe_instance_ids_from_topic instance_ids, topic_name
+    response = nil
+    for_uri(INSTANCE_ID_API) do
+      response = self.class.post('/v1:batchRemove', body: {
+                                        to: "/topics/#{topic_name}",
+                                        registration_tokens: instance_ids
+                                  }.to_json,
+                                 headers: {
+                                'Authorization' => "key=#{@api_key}",
+                                'Content-type' => 'application/json'
+                              }
+                                )
+    end
+    build_response(response)
   end
 
   def send_to_topic_condition(condition, options = {})
