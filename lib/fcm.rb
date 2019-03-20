@@ -1,16 +1,15 @@
-require 'httparty'
+require 'faraday'
 require 'cgi'
 require 'json'
 
 class FCM
-  include HTTParty
-  base_uri 'https://fcm.googleapis.com/fcm'
-  default_timeout 30
-  format :json
+  BASE_URI = 'https://fcm.googleapis.com'
+  DEFAULT_TIMEOUT = 30
+  FORMAT = :json
 
   # constants
-  GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com/gcm'
-  INSTANCE_ID_API = 'https://iid.googleapis.com/iid'
+  GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com'
+  INSTANCE_ID_API = 'https://iid.googleapis.com'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
   attr_accessor :timeout, :api_key
@@ -35,15 +34,10 @@ class FCM
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
 
-    params = {
-      body: post_body.to_json,
-      headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-Type' => 'application/json'
-      }
-    }
-    response = self.class.post('/send', params.merge(@client_options))
-    build_response(response, registration_ids)
+    for_uri(BASE_URI) do |connection|
+      response = connection.post('/fcm/send', post_body.to_json)
+      build_response(response, registration_ids)
+    end
   end
   alias send send_notification
 
@@ -51,22 +45,14 @@ class FCM
     post_body = build_post_body(registration_ids, operation: 'create',
                                 notification_key_name: key_name)
 
-    params = {
-      body: post_body.to_json,
-      headers: {
-        'Content-Type' => 'application/json',
-        'project_id' => project_id,
-        'Authorization' => "key=#{@api_key}"
-      }
+    extra_headers = {
+      'project_id' => project_id
     }
 
-    response = nil
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
+    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
+      response = connection.post('/gcm/notification', post_body.to_json)
+      build_response(response)
     end
-
-    build_response(response)
   end
   alias create create_notification_key
 
@@ -75,21 +61,14 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    params = {
-      body: post_body.to_json,
-      headers: {
-        'Content-Type' => 'application/json',
-        'project_id' => project_id,
-        'Authorization' => "key=#{@api_key}"
-      }
+    extra_headers = {
+      'project_id' => project_id
     }
 
-    response = nil
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
+    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
+      response = connection.post('/gcm/notification', post_body.to_json)
+      build_response(response)
     end
-    build_response(response)
   end
   alias add add_registration_ids
 
@@ -98,21 +77,14 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    params = {
-      body: post_body.to_json,
-      headers: {
-        'Content-Type' => 'application/json',
-        'project_id' => project_id,
-        'Authorization' => "key=#{@api_key}"
-      }
+    extra_headers = {
+      'project_id' => project_id
     }
 
-    response = nil
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
+    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
+      response = connection.post('/gcm/notification', post_body.to_json)
+      build_response(response)
     end
-    build_response(response)
   end
   alias remove remove_registration_ids
 
@@ -120,20 +92,17 @@ class FCM
     params = {
       query: {
         notification_key_name: key_name
-      },
-      headers: {
-        'Content-Type' => 'application/json',
-        'project_id' => project_id,
-        'Authorization' => "key=#{@api_key}"
       }
     }
+      
+    extra_headers = {
+      'project_id' => project_id
+    }
 
-    response = nil
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.get('/notification', params.merge(@client_options))
+    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
+      response = connection.get('/gcm/notification', params)
+      build_response(response)
     end
-    build_response(response)
   end
 
   def send_with_notification_key(notification_key, options = {})
@@ -142,20 +111,10 @@ class FCM
   end
 
   def topic_subscription(topic, registration_id)
-    params = {
-      headers: {
-          'Authorization' => "key=#{@api_key}",
-          'Content-Type' => 'application/json'
-      }
-    }
-
-    response = nil
-
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/v1/#{registration_id}/rel/topics/#{topic}", params)
+    for_uri(INSTANCE_ID_API) do |connection|
+      response = connection.post("/iid/v1/#{registration_id}/rel/topics/#{topic}")
+      build_response(response)
     end
-
-    build_response(response)
   end
 
   def batch_topic_subscription(topic, registration_ids)
@@ -168,24 +127,12 @@ class FCM
 
   def manage_topics_relationship(topic, registration_ids, action)
     body = { to: "/topics/#{topic}", registration_tokens: registration_ids }
-    params = {
-        body: body.to_json,
-        headers: {
-            'Authorization' => "key=#{@api_key}",
-            'Content-Type' => 'application/json'
-        }
-    }
 
-    response = nil
-
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/v1/:batch#{action}", params)
+    for_uri(INSTANCE_ID_API) do |connection|
+      response = connection.post("/iid/v1:batch#{action}", body.to_json)
+      build_response(response)
     end
-
-    build_response(response)
   end
-
-
 
   def send_to_topic(topic, options = {})
     if topic.gsub(TOPIC_REGEX, "").length == 0
@@ -194,68 +141,30 @@ class FCM
   end
 
   def get_instance_id_info iid_token, options={}
-    response = nil
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.get('/info/'+iid_token, query: options, headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-type' => 'application/json'
-      })
+    params = {
+      query: options
+    }
+    
+    for_uri(INSTANCE_ID_API) do |connection|
+      response = connection.get('/iid/info/'+iid_token, params)
+      build_response(response)
     end
-    build_response(response)
   end
 
   def subscribe_instance_id_to_topic iid_token, topic_name
-    response = nil
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post('/v1/'+iid_token+'/rel/topics/'+topic_name, headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-type' => 'application/json'
-      })
-    end
-    build_response(response)
+    batch_subscribe_instance_ids_to_topic([iid_token], topic_name)
   end
 
   def unsubscribe_instance_id_from_topic iid_token, topic_name
-    response = nil
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post('/v1/'+iid_token+'/rel/topics/'+topic_name, headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-type' => 'application/json'
-      })
-    end
-    build_response(response)
+    batch_unsubscribe_instance_ids_from_topic([iid_token], topic_name)
   end
 
   def batch_subscribe_instance_ids_to_topic instance_ids, topic_name
-    response = nil
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post('/v1:batchAdd', body:{
-                                        to: "/topics/#{topic_name}",
-                                        registration_tokens: instance_ids
-                                }.to_json,
-                                 headers: {
-                                'Authorization' => "key=#{@api_key}",
-                                'Content-type' => 'application/json'
-                              }
-                                )
-    end
-    build_response(response)
+    manage_topics_relationship(topic_name, instance_ids, 'Add')
   end
 
   def batch_unsubscribe_instance_ids_from_topic instance_ids, topic_name
-    response = nil
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post('/v1:batchRemove', body: {
-                                        to: "/topics/#{topic_name}",
-                                        registration_tokens: instance_ids
-                                  }.to_json,
-                                 headers: {
-                                'Authorization' => "key=#{@api_key}",
-                                'Content-type' => 'application/json'
-                              }
-                                )
-    end
-    build_response(response)
+    manage_topics_relationship(topic_name, instance_ids, 'Remove')
   end
 
   def send_to_topic_condition(condition, options = {})
@@ -267,11 +176,16 @@ class FCM
 
   private
 
-  def for_uri(uri)
-    current_uri = self.class.base_uri
-    self.class.base_uri uri
-    yield
-    self.class.base_uri current_uri
+  def for_uri(uri, extra_headers = {})
+    connection = ::Faraday.new(:url => uri) do |faraday|
+      faraday.adapter  Faraday.default_adapter
+      faraday.headers["Content-Type"] = "application/json"
+      faraday.headers["Authorization"] = "key=#{api_key}"
+      extra_headers.each do |key, value|
+        faraday.headers[key] = value
+      end
+    end
+    yield connection
   end
 
   def build_post_body(registration_ids, options = {})
@@ -281,8 +195,8 @@ class FCM
 
   def build_response(response, registration_ids = [])
     body = response.body || {}
-    response_hash = { body: body, headers: response.headers, status_code: response.code }
-    case response.code
+    response_hash = { body: body, headers: response.headers, status_code: response.status }
+    case response.status
     when 200
       response_hash[:response] = 'success'
       body = JSON.parse(body) unless body.empty?
@@ -325,16 +239,10 @@ class FCM
   end
 
   def execute_notification(body)
-    params = {
-      body: body.to_json,
-      headers: {
-        'Authorization' => "key=#{@api_key}",
-        'Content-Type' => 'application/json'
-      }
-    }
-
-    response = self.class.post('/send', params.merge(@client_options))
-    build_response(response)
+    for_uri(BASE_URI) do |connection|
+      response = connection.post('/fcm/send', body.to_json)
+      build_response(response)
+    end
   end
 
   def has_canonical_id?(result)
