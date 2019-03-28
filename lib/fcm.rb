@@ -94,7 +94,7 @@ class FCM
         notification_key_name: key_name
       }
     }
-      
+
     extra_headers = {
       'project_id' => project_id
     }
@@ -144,7 +144,7 @@ class FCM
     params = {
       query: options
     }
-    
+
     for_uri(INSTANCE_ID_API) do |connection|
       response = connection.get('/iid/info/'+iid_token, params)
       build_response(response)
@@ -177,7 +177,14 @@ class FCM
   private
 
   def for_uri(uri, extra_headers = {})
+    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS +[ServerError]
     connection = ::Faraday.new(:url => uri) do |faraday|
+      faraday.request  :retry, max: 5, interval: 0.1, interval_randomness: 0.5, backoff_factor: 2,
+                        exceptions: retryable_exceptions, retry_statuses: [200], methods: [],
+                        retry_if: Proc.new do |env, exception|
+                          return true unless exception.is_a?(Faraday::RetriableResponse)
+                          return true if exception.response.body[:results].any? { |result| result[:error]  == "Unavailable" }
+                        end
       faraday.adapter  Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "key=#{api_key}"
