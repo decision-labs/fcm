@@ -8,7 +8,6 @@ class FCM
   FORMAT = :json
 
   # constants
-  GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com'
   INSTANCE_ID_API = 'https://iid.googleapis.com'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
@@ -49,8 +48,8 @@ class FCM
       'project_id' => project_id
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
+    for_uri(BASE_URI, extra_headers) do |connection|
+      response = connection.post('/fcm/notification', post_body.to_json)
       build_response(response)
     end
   end
@@ -65,8 +64,8 @@ class FCM
       'project_id' => project_id
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
+    for_uri(BASE_URI, extra_headers) do |connection|
+      response = connection.post('/fcm/notification', post_body.to_json)
       build_response(response)
     end
   end
@@ -81,8 +80,8 @@ class FCM
       'project_id' => project_id
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
+    for_uri(BASE_URI, extra_headers) do |connection|
+      response = connection.post('/fcm/notification', post_body.to_json)
       build_response(response)
     end
   end
@@ -99,8 +98,8 @@ class FCM
       'project_id' => project_id
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.get('/gcm/notification', params)
+    for_uri(BASE_URI, extra_headers) do |connection|
+      response = connection.get('/fcm/notification', params)
       build_response(response)
     end
   end
