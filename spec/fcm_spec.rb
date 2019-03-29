@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe FCM do
   let(:send_url) { "#{FCM::BASE_URI}/fcm/send" }
-  let(:group_notification_base_uri) { "#{FCM::GROUP_NOTIFICATION_BASE_URI}/gcm/notification" }
+  let(:group_notification_base_uri) { "#{FCM::BASE_URI}/fcm/notification" }
   let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
   let(:registration_id) { '42' }
   let(:registration_ids) { ['42'] }
