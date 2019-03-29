@@ -178,6 +178,9 @@ class FCM
 
   def for_uri(uri, extra_headers = {})
     retry_if_func = lambda do |env, exception|
+      retryable_errors = [
+        "Unavailable", "InternalServerError",
+        "DeviceMessageRateExceeded", "TopicsMessageRateExceeded"]
       case (exception.response[:status] || exception.response.status)
       when (500..599)
         true
@@ -185,7 +188,7 @@ class FCM
         false
       when 200
         body = JSON.parse(exception.response.body)
-        body["results"] != nil && body["results"].any? { |result| result["error"]  == "Unavailable" }
+        body["results"] != nil && body["results"].any? { |result| retryable_errors.include? result["error"]}
       end
     end
     retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS + [ Faraday::ClientError]
