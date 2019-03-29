@@ -33,6 +33,7 @@ class FCM
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
 
+
     for_uri(BASE_URI) do |connection|
       response = connection.post('/fcm/send', post_body.to_json)
       build_response(response, registration_ids)
@@ -176,14 +177,23 @@ class FCM
   private
 
   def for_uri(uri, extra_headers = {})
-    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS +[ServerError]
+    retry_if_func = lambda do |env, exception|
+      case (exception.response[:status] || exception.response.status)
+      when (500..599)
+        true
+      when (400..499)
+        false
+      when 200
+        body = JSON.parse(exception.response.body)
+        body["results"] != nil && body["results"].any? { |result| result["error"]  == "Unavailable" }
+      end
+    end
+    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS + [ Faraday::ClientError]
     connection = ::Faraday.new(:url => uri) do |faraday|
-      faraday.request  :retry, max: 5, interval: 0.1, interval_randomness: 0.5, backoff_factor: 2,
+      faraday.request :retry, max: 5, interval: 0.1, interval_randomness: 0.5, backoff_factor: 2,
                         exceptions: retryable_exceptions, retry_statuses: [200], methods: [],
-                        retry_if: Proc.new do |env, exception|
-                          return true unless exception.is_a?(Faraday::RetriableResponse)
-                          return true if exception.response.body[:results].any? { |result| result[:error]  == "Unavailable" }
-                        end
+                        retry_if: retry_if_func
+      faraday.response :raise_error
       faraday.adapter  Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "key=#{api_key}"
