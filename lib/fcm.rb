@@ -181,22 +181,18 @@ class FCM
       retryable_errors = [
         "Unavailable", "InternalServerError",
         "DeviceMessageRateExceeded", "TopicsMessageRateExceeded"]
-      case (exception.response[:status] || exception.response.status)
-      when (500..599)
-        true
-      when (400..499)
-        false
-      when 200
+      if defined?(exception.response) && defined?(exception.response.status) && exception.response.status == 200
         body = JSON.parse(exception.response.body)
         body["results"] != nil && body["results"].any? { |result| retryable_errors.include? result["error"]}
+      else
+        true
       end
     end
-    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS + [ Faraday::ClientError]
+    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS
     connection = ::Faraday.new(:url => uri) do |faraday|
       faraday.request :retry, max: 5, interval: 0.1, interval_randomness: 0.5, backoff_factor: 2,
-                        exceptions: retryable_exceptions, retry_statuses: [200], methods: [],
+                        exceptions: retryable_exceptions, retry_statuses: [200, *(500..599)], methods: [],
                         retry_if: retry_if_func
-      faraday.response :raise_error
       faraday.adapter  Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "key=#{api_key}"
