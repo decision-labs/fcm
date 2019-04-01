@@ -369,7 +369,7 @@ describe FCM do
           body = error_response_body if i == 1
           body = valid_response_body if i == 0
           i += 1
-          {status: status, headers: { "Retry-After": "1"}, body: body.to_json}
+          {status: status, headers: { :"Retry-After" => "1"}, body: body.to_json}
         end
       end
 
