@@ -45,14 +45,7 @@ class FCM
     post_body = build_post_body(registration_ids, operation: 'create',
                                 notification_key_name: key_name)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(BASE_URI, extra_headers) do |connection|
-      response = connection.post('/fcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias create create_notification_key
 
@@ -61,14 +54,7 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(BASE_URI, extra_headers) do |connection|
-      response = connection.post('/fcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias add add_registration_ids
 
@@ -77,14 +63,7 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(BASE_URI, extra_headers) do |connection|
-      response = connection.post('/fcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias remove remove_registration_ids
 
@@ -251,6 +230,17 @@ class FCM
       end
     end
     not_registered_ids
+  end
+
+  def update_group_messaging_setting(body, project_id)
+    extra_headers = {
+      'project_id' => project_id
+    }
+    
+    for_uri(BASE_URI, extra_headers) do |connection|
+        response = connection.post('/fcm/notification', body.to_json)
+        build_response(response)
+    end
   end
 
   def execute_notification(body)
