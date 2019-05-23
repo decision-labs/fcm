@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe FCM do
   let(:send_url) { "#{FCM::BASE_URI}/fcm/send" }
-  let(:group_notification_base_uri) { "#{FCM::GROUP_NOTIFICATION_BASE_URI}/gcm/notification" }
+  let(:group_notification_base_uri) { "#{FCM::BASE_URI}/fcm/notification" }
   let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
   let(:registration_id) { '42' }
   let(:registration_ids) { ['42'] }
@@ -90,7 +90,7 @@ describe FCM do
         stub_request(:post, send_url)
           .with(body: '{"registration_ids":["42"],"data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
       before do
       end
@@ -106,13 +106,13 @@ describe FCM do
         stub_request(:post, send_url)
           .with(body: '{"to":"/topics/TopicA","data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
       let!(:stub_with_invalid_topic) do
         stub_request(:post, send_url)
           .with(body: '{"condition":"/topics/TopicA$","data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
 
       describe "#send_to_topic" do
@@ -135,19 +135,19 @@ describe FCM do
         stub_request(:post, send_url)
           .with(body: '{"condition":"\'TopicA\' in topics && (\'TopicB\' in topics || \'TopicC\' in topics)","data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
       let!(:stub_with_invalid_condition) do
         stub_request(:post, send_url)
           .with(body: '{"condition":"\'TopicA\' in topics and some other text (\'TopicB\' in topics || \'TopicC\' in topics)","data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
       let!(:stub_with_invalid_condition_topic) do
         stub_request(:post, send_url)
           .with(body: '{"condition":"\'TopicA$\' in topics","data":{"score":"5x1","time":"15:10"}}',
                 headers: valid_request_headers)
-          .to_return(status: 200, body: '', headers: {})
+          .to_return(status: 200, body: '{}', headers: {})
       end
 
       describe "#send_to_topic_condition" do
@@ -336,6 +336,50 @@ describe FCM do
           response: 'success',
           body: '{"canonical_ids":0,"failure":1,"results":[{"error":"NotRegistered"}]}'
         )
+      end
+    end
+
+    context 'when send_notification responds with 5XX or 200+error:unavailable' do
+      subject { FCM.new(api_key) }
+
+      let(:valid_response_body) do
+        {
+          failure: 0, canonical_ids: 0, results: [{ message_id: '0:1385025861956342%572c22801bb3' }]
+        }
+      end
+
+      let(:error_response_body) do
+        {
+          failure: 1, canonical_ids: 0, results: [{ error: 'Unavailable' }]
+        }
+      end
+
+
+      let(:stub_fcm_send_request_unavaible_server) do
+        i = 0
+        stub_request(:post, send_url).with(
+          body: "{\"registration_ids\":[\"42\"]}",
+          headers: {
+       	  'Accept'=>'*/*',
+       	  'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+       	  'User-Agent'=>'Faraday v0.15.4'
+        }).to_return do |stub|
+          body = {}
+          status = ( i == 0) ? 501 : 200
+          body = error_response_body if i == 1
+          body = valid_response_body if i == 0
+          i += 1
+          {status: status, headers: { :"Retry-After" => "1"}, body: body.to_json}
+        end
+      end
+
+      before(:each) do
+        stub_fcm_send_request_unavaible_server
+      end
+
+      it 'should retry 2 times' do
+        subject.send( registration_ids)
+        stub_fcm_send_request_unavaible_server.should have_been_made.times(3)
       end
     end
   end
