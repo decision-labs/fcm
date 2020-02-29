@@ -175,6 +175,10 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 0.0.7
+
+- replace `httparty` with `faraday`
+
 ### 0.0.2
 
 - Fixed group messaging url.
