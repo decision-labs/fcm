@@ -27,6 +27,7 @@ One of the following, tested Ruby versions:
 - `2.3.8`
 - `2.4.5`
 - `2.5.3`
+- `2.6.5`
 
 ## Usage
 
