@@ -19,8 +19,10 @@ gem 'fcm'
 
 For Android you will need a device running 2.3 (or newer) that also have the Google Play Store app installed, or an emulator running Android 2.3 with Google APIs. iOS devices are also supported.
 
+
 A version of supported Ruby, currently:  
 `ruby >= 2.4`
+
 
 ## Usage
 
