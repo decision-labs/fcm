@@ -12,9 +12,7 @@ Gem::Specification.new do |s|
   s.description = %q{fcm provides ruby bindings to Firebase Cloud Messaging (FCM) a cross-platform messaging solution that lets you reliably deliver messages and notifications at no cost to Android, iOS or Web browsers.}
   s.license     = "MIT"
 
-  s.required_ruby_version     = '>= 2.0.0'
-
-  s.rubyforge_project = "fcm"
+  s.required_ruby_version     = '>= 2.4.0'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
