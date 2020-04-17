@@ -19,14 +19,8 @@ gem 'fcm'
 
 For Android you will need a device running 2.3 (or newer) that also have the Google Play Store app installed, or an emulator running Android 2.3 with Google APIs. iOS devices are also supported.
 
-One of the following, tested Ruby versions:
-
-- `2.0.0`
-- `2.1.10`
-- `2.2.10`
-- `2.3.8`
-- `2.4.5`
-- `2.5.3`
+A version of supported Ruby, currently:  
+`ruby >= 2.4`
 
 ## Usage
 
@@ -174,6 +168,10 @@ You can find a guide to implement an Android Client app to receive notifications
 The guide to set up an iOS app to get notifications is here: [Setting up a FCM Client App on iOS](https://firebase.google.com/docs/cloud-messaging/ios/client).
 
 ## ChangeLog
+
+### 1.0.0
+
+- Bumped supported ruby to `>= 2.4`
 
 ### 0.0.7
 
