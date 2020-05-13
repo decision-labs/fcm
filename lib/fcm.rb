@@ -174,6 +174,18 @@ class FCM
     end
   end
 
+  # Verifies the token was registered or not
+  def valid_token?(registration_id)
+    post_body = build_post_body(registration_id)
+    body = {}
+    for_uri(BASE_URI) do |connection|
+      response = connection.post('/fcm/send', post_body.to_json)
+      body = response.body || {}
+    end
+    body = JSON.parse(body) unless body.empty?
+    body["success"].to_i != 0
+  end
+
   private
 
   def for_uri(uri, extra_headers = {})

@@ -52,6 +52,12 @@ response = fcm.send(registration_ids, options)
 
 Currently `response` is just a hash containing the response `body`, `headers` and `status_code`. Check [here](https://firebase.google.com/docs/cloud-messaging/server#response) to see how to interpret the responses.
 
+Example of verifying the token:
+
+```ruby
+fcm.valid_token?("cT4WKhKbuiE:APA91bEgSygq7Xo-LBn...") # returns true/false
+```
+
 ## Device Group Messaging
 
 With [device group messaging](https://firebase.google.com/docs/cloud-messaging/notifications), you can send a single message to multiple instance of an app running on devices belonging to a group. Typically, "group" refers a set of different devices that belong to a single user. However, a group could also represent a set of devices where the app instance functions in a highly correlated manner. To use this feature, you will first need an initialised `FCM` class.
