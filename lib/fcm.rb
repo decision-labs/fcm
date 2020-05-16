@@ -8,7 +8,6 @@ class FCM
   FORMAT = :json
 
   # constants
-  GROUP_NOTIFICATION_BASE_URI = 'https://android.googleapis.com'
   INSTANCE_ID_API = 'https://iid.googleapis.com'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
@@ -34,6 +33,7 @@ class FCM
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
 
+
     for_uri(BASE_URI) do |connection|
       response = connection.post('/fcm/send', post_body.to_json)
       build_response(response, registration_ids)
@@ -45,14 +45,7 @@ class FCM
     post_body = build_post_body(registration_ids, operation: 'create',
                                 notification_key_name: key_name)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias create create_notification_key
 
@@ -61,14 +54,7 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias add add_registration_ids
 
@@ -77,14 +63,7 @@ class FCM
                                 notification_key_name: key_name,
                                 notification_key: notification_key)
 
-    extra_headers = {
-      'project_id' => project_id
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post('/gcm/notification', post_body.to_json)
-      build_response(response)
-    end
+    update_group_messaging_setting(post_body, project_id)
   end
   alias remove remove_registration_ids
 
@@ -94,13 +73,13 @@ class FCM
         notification_key_name: key_name
       }
     }
-      
+
     extra_headers = {
       'project_id' => project_id
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.get('/gcm/notification', params)
+    for_uri(BASE_URI, extra_headers) do |connection|
+      response = connection.get('/fcm/notification', params)
       build_response(response)
     end
   end
@@ -144,7 +123,7 @@ class FCM
     params = {
       query: options
     }
-    
+
     for_uri(INSTANCE_ID_API) do |connection|
       response = connection.get('/iid/info/'+iid_token, params)
       build_response(response)
@@ -177,7 +156,22 @@ class FCM
   private
 
   def for_uri(uri, extra_headers = {})
+    retry_if_func = lambda do |env, exception|
+      retryable_errors = [
+        "Unavailable", "InternalServerError",
+        "DeviceMessageRateExceeded", "TopicsMessageRateExceeded"]
+      if defined?(exception.response) && defined?(exception.response.status) && exception.response.status == 200
+        body = JSON.parse(exception.response.body)
+        body["results"] != nil && body["results"].any? { |result| retryable_errors.include? result["error"]}
+      else
+        true
+      end
+    end
+    retryable_exceptions = Faraday::Request::Retry::DEFAULT_EXCEPTIONS
     connection = ::Faraday.new(:url => uri) do |faraday|
+      faraday.request :retry, max: 5, interval: 0.1, interval_randomness: 0.5, backoff_factor: 2,
+                        exceptions: retryable_exceptions, retry_statuses: [200, *(500..599)], methods: [],
+                        retry_if: retry_if_func
       faraday.adapter  Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "key=#{api_key}"
@@ -236,6 +230,17 @@ class FCM
       end
     end
     not_registered_ids
+  end
+
+  def update_group_messaging_setting(body, project_id)
+    extra_headers = {
+      'project_id' => project_id
+    }
+    
+    for_uri(BASE_URI, extra_headers) do |connection|
+        response = connection.post('/fcm/notification', body.to_json)
+        build_response(response)
+    end
   end
 
   def execute_notification(body)
