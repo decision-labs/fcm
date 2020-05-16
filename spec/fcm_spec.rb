@@ -362,7 +362,7 @@ describe FCM do
           headers: {
        	  'Accept'=>'*/*',
        	  'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-       	  'User-Agent'=>'Faraday v0.15.4'
+       	  'User-Agent'=>'Faraday v1.0.1'
         }).to_return do |stub|
           body = {}
           status = ( i == 0) ? 501 : 200
