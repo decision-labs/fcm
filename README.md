@@ -174,6 +174,7 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 ### 1.0.0
 
 - Bumped supported ruby to `>= 2.4`
+- Fix deprecation warnings from `faraday` by changing dependency version to `faraday 1.0.0`
 
 ### 0.0.7
 
