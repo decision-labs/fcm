@@ -90,9 +90,7 @@ class FCM
 
   def recover_notification_key(key_name, project_id)
     params = {
-      query: {
-        notification_key_name: key_name
-      }
+      notification_key_name: key_name
     }
       
     extra_headers = {
