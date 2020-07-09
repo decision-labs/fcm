@@ -208,7 +208,7 @@ Update version in `fcm.gemspec` with `VERSION` and update `README.md` `## Change
 # set the version
 # VERSION="1.0.2"
 gem build fcm.gemspec
-gem push fcm-${VERSION}.gem
 git tag -a v${VERSION} -m "Releasing version v${VERSION}"
 git push origin --tags
+gem push fcm-${VERSION}.gem
 ```
