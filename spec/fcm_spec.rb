@@ -472,6 +472,25 @@ describe FCM do
     end # remove context
   end
 
+  describe "#recover_notification_key" do
+    it "sends a 'retrieve notification key' request" do
+      uri = "#{FCM::GROUP_NOTIFICATION_BASE_URI}/gcm/notification"
+      endpoint = stub_request(:get, uri).with(
+        headers: {
+          'Content-Type' => 'application/json',
+          'Authorization' => "key=TEST_SERVER_KEY",
+          'project_id' => "TEST_PROJECT_ID"
+        },
+        query: {notification_key_name: "TEST_KEY_NAME"}
+      )
+      client = FCM.new("TEST_SERVER_KEY")
+
+      client.recover_notification_key("TEST_KEY_NAME", "TEST_PROJECT_ID")
+
+      expect(endpoint).to have_been_requested
+    end
+  end
+
   describe 'subscribing to a topic' do
     # TODO
   end

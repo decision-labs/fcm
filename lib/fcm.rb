@@ -89,11 +89,7 @@ class FCM
   alias remove remove_registration_ids
 
   def recover_notification_key(key_name, project_id)
-    params = {
-      query: {
-        notification_key_name: key_name
-      }
-    }
+    params = {notification_key_name: key_name}
       
     extra_headers = {
       'project_id' => project_id
