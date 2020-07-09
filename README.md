@@ -170,6 +170,9 @@ You can find a guide to implement an Android Client app to receive notifications
 The guide to set up an iOS app to get notifications is here: [Setting up a FCM Client App on iOS](https://firebase.google.com/docs/cloud-messaging/ios/client).
 
 ## ChangeLog
+### 1.0.2
+
+- Bug fix: retrieve notification key" params: https://github.com/spacialdb/fcm/commit/b328a75c11d779a06d0ceda83527e26aa0495774
 
 ### 1.0.0
 
@@ -196,3 +199,16 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 ## Many thanks to all the contributors
 
 - [Contributors](https://github.com/spacialdb/fcm/contributors)
+
+## Cutting a release
+
+Update version in `fcm.gemspec` with `VERSION` and update `README.md` `## ChangeLog` section.
+
+```bash
+# set the version
+# VERSION="1.0.2"
+gem build fcm.gemspec
+gem push fcm-${VERSION}.gem
+git tag -a v${VERSION} -m "Releasing version v${VERSION}"
+git push origin --tags
+```
