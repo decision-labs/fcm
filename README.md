@@ -41,7 +41,7 @@ fcm = FCM.new("my_server_key")
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
 
-# See https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages for all available options.
+# See https://firebase.google.com/docs/cloud-messaging/http-server-ref for all available options.
 options = { "notification": {
               "title": "Portugal vs. Denmark",
               "body": "5 to 1"
