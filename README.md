@@ -1,6 +1,6 @@
 # Firebase Cloud Messaging (FCM) for Android and iOS
 
-[![Gem Version](https://badge.fury.io/rb/fcm.svg)](http://badge.fury.io/rb/fcm) [![Build Status](https://secure.travis-ci.org/spacialdb/fcm.svg?branch=master)](http://travis-ci.org/spacialdb/fcm)
+[![Gem Version](https://badge.fury.io/rb/fcm.svg)](http://badge.fury.io/rb/fcm) [![Build Status](https://secure.travis-ci.org/decision-labs/fcm.svg?branch=master)](http://travis-ci.org/decision-labs/fcm)
 
 The FCM gem lets your ruby backend send notifications to Android and iOS devices via [
 Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/).
