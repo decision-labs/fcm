@@ -42,7 +42,7 @@ class FCM
         'Content-Type' => 'application/json'
       }
     }
-    response = self.class.post('/send', params.merge(@client_options))
+    response = self.class.post('https://fcm.googleapis.com/fcm/send', params.merge(@client_options))
     build_response(response, registration_ids)
   end
   alias send send_notification
@@ -62,9 +62,7 @@ class FCM
 
     response = nil
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
-    end
+    response = self.class.post("#{GROUP_NOTIFICATION_BASE_URI}/notification", params.merge(@client_options))
 
     build_response(response)
   end
@@ -86,9 +84,8 @@ class FCM
 
     response = nil
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
-    end
+    response = self.class.post("#{GROUP_NOTIFICATION_BASE_URI}/notification", params.merge(@client_options))
+
     build_response(response)
   end
   alias add add_registration_ids
@@ -109,9 +106,8 @@ class FCM
 
     response = nil
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.post('/notification', params.merge(@client_options))
-    end
+    response = self.class.post("#{GROUP_NOTIFICATION_BASE_URI}/notification", params.merge(@client_options))
+
     build_response(response)
   end
   alias remove remove_registration_ids
@@ -130,9 +126,8 @@ class FCM
 
     response = nil
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI) do
-      response = self.class.get('/notification', params.merge(@client_options))
-    end
+    response = self.class.get("#{GROUP_NOTIFICATION_BASE_URI}/notification", params.merge(@client_options))
+
     build_response(response)
   end
 
@@ -151,9 +146,7 @@ class FCM
 
     response = nil
 
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/#{registration_id}/rel/topics/#{topic}", params)
-    end
+    response = self.class.post("#{INSTANCE_ID_API}/#{registration_id}/rel/topics/#{topic}", params)
 
     build_response(response)
   end
@@ -178,9 +171,7 @@ class FCM
 
     response = nil
 
-    for_uri(INSTANCE_ID_API) do
-      response = self.class.post("/:batch#{action}", params)
-    end
+    response = self.class.post("#{INSTANCE_ID_API}/:batch#{action}", params)
 
     build_response(response)
   end
@@ -268,7 +259,8 @@ class FCM
       }
     }
 
-    response = self.class.post('/send', params.merge(@client_options))
+    response = self.class.post('https://fcm.googleapis.com/fcm/send', params.merge(@client_options))
+
     build_response(response)
   end
 
