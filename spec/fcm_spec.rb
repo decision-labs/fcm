@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe FCM do
-  let(:send_url) { "#{FCM.base_uri}/send" }
-  let(:group_notification_base_uri) { "https://android.googleapis.com/gcm/notification" }
+  let(:send_url) { "#{FCM::BASE_URI}/fcm/send" }
+  let(:group_notification_base_uri) { "#{FCM::GROUP_NOTIFICATION_BASE_URI}/gcm/notification" }
   let(:api_key) { 'AIzaSyB-1uEai2WiUapxCs2Q0GZYzPu7Udno5aA' }
   let(:registration_id) { '42' }
   let(:registration_ids) { ['42'] }
@@ -254,7 +254,7 @@ describe FCM do
 
         it 'should not send notification due to 599' do
           subject.send(registration_ids).should eq(body: '{"body-key" => "Body value"}',
-                                                   headers: { 'header-key' => ['Header value'] },
+                                                   headers: { 'header-key' => 'Header value' },
                                                    response: 'There was an internal error in the FCM server while trying to process the request.',
                                                    status_code: 599)
         end
@@ -470,6 +470,25 @@ describe FCM do
         )
       end
     end # remove context
+  end
+
+  describe "#recover_notification_key" do
+    it "sends a 'retrieve notification key' request" do
+      uri = "#{FCM::GROUP_NOTIFICATION_BASE_URI}/gcm/notification"
+      endpoint = stub_request(:get, uri).with(
+        headers: {
+          'Content-Type' => 'application/json',
+          'Authorization' => "key=TEST_SERVER_KEY",
+          'project_id' => "TEST_PROJECT_ID"
+        },
+        query: {notification_key_name: "TEST_KEY_NAME"}
+      )
+      client = FCM.new("TEST_SERVER_KEY")
+
+      client.recover_notification_key("TEST_KEY_NAME", "TEST_PROJECT_ID")
+
+      expect(endpoint).to have_been_requested
+    end
   end
 
   describe 'subscribing to a topic' do

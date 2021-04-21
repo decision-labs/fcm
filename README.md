@@ -1,6 +1,6 @@
 # Firebase Cloud Messaging (FCM) for Android and iOS
 
-[![Gem Version](https://badge.fury.io/rb/fcm.svg)](http://badge.fury.io/rb/fcm) [![Build Status](https://secure.travis-ci.org/spacialdb/fcm.png?branch=master)](http://travis-ci.org/spacialdb/fcm)
+[![Gem Version](https://badge.fury.io/rb/fcm.svg)](http://badge.fury.io/rb/fcm) [![Build Status](https://secure.travis-ci.org/decision-labs/fcm.svg?branch=master)](http://travis-ci.org/decision-labs/fcm)
 
 The FCM gem lets your ruby backend send notifications to Android and iOS devices via [
 Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/).
@@ -19,12 +19,10 @@ gem 'fcm'
 
 For Android you will need a device running 2.3 (or newer) that also have the Google Play Store app installed, or an emulator running Android 2.3 with Google APIs. iOS devices are also supported.
 
-One of the following, tested Ruby versions:
 
-- `2.0.0`
-- `2.1.9`
-- `2.2.5`
-- `2.3.1`
+A version of supported Ruby, currently:  
+`ruby >= 2.4`
+
 
 ## Usage
 
@@ -36,19 +34,14 @@ Example sending notifications:
 require 'fcm'
 
 fcm = FCM.new("my_server_key")
-# you can set option parameters in here
-#  - all options are pass to HTTParty method arguments
-#  - ref: https://github.com/jnunemaker/httparty/blob/master/lib/httparty.rb#L29-L60
-#  fcm = FCM.new("my_server_key", timeout: 3)
 
 registration_ids= ["12", "13"] # an array of one or more client registration tokens
 
-# See https://developers.google.com/cloud-messaging/http for all available options.
+# See https://firebase.google.com/docs/cloud-messaging/http-server-ref for all available options.
 options = { "notification": {
               "title": "Portugal vs. Denmark",
-              "text": "5 to 1"
-          },
-          "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
+              "body": "5 to 1"
+          }
 }
 response = fcm.send(registration_ids, options)
 ```
@@ -104,14 +97,14 @@ FCM [topic messaging](https://firebase.google.com/docs/cloud-messaging/topic-mes
 
 ```ruby
 response = fcm.send_with_notification_key("/topics/yourTopic",
-            data: {message: "This is a FCM Topic Message!"})
+            notification: {body: "This is a FCM Topic Message!"})
 ```
 
 Or you can use the helper:
 
 ```ruby
 response = fcm.send_to_topic("yourTopic",
-            data: {message: "This is a FCM Topic Message!"})
+            notification: {body: "This is a FCM Topic Message!"})
 ```
 
 ### Sending to Multiple Topics
@@ -140,8 +133,8 @@ The `send_to_topic_condition` method within this library allows you to specicy a
 ```ruby
 response = fcm.send_to_topic_condition(
   "'TopicA' in topics && ('TopicB' in topics || 'TopicC' in topics)",
-  data: {
-    message: "This is an FCM Topic Message sent to a condition!"
+  notification: {
+    body: "This is an FCM Topic Message sent to a condition!"
   }
 )
 ```
@@ -173,6 +166,18 @@ You can find a guide to implement an Android Client app to receive notifications
 The guide to set up an iOS app to get notifications is here: [Setting up a FCM Client App on iOS](https://firebase.google.com/docs/cloud-messaging/ios/client).
 
 ## ChangeLog
+### 1.0.2
+
+- Bug fix: retrieve notification key" params: https://github.com/spacialdb/fcm/commit/b328a75c11d779a06d0ceda83527e26aa0495774
+
+### 1.0.0
+
+- Bumped supported ruby to `>= 2.4`
+- Fix deprecation warnings from `faraday` by changing dependency version to `faraday 1.0.0`
+
+### 0.0.7
+
+- replace `httparty` with `faraday`
 
 ### 0.0.2
 
@@ -191,8 +196,15 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 - [Contributors](https://github.com/spacialdb/fcm/contributors)
 
-## Donations
+## Cutting a release
 
-We accept tips through [Gratipay](https://gratipay.com/spacialdb/).
+Update version in `fcm.gemspec` with `VERSION` and update `README.md` `## ChangeLog` section.
 
-[![Gratipay](https://img.shields.io/gratipay/spacialdb.svg)](https://www.gittip.com/spacialdb/)
+```bash
+# set the version
+# VERSION="1.0.2"
+gem build fcm.gemspec
+git tag -a v${VERSION} -m "Releasing version v${VERSION}"
+git push origin --tags
+gem push fcm-${VERSION}.gem
+```
