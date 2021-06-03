@@ -3,10 +3,10 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "fcm"
-  s.version     = "1.0.2"
+  s.version     = "1.0.3"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Kashif Rasul", "Shoaib Burq"]
-  s.email       = ["kashif@spacialdb.com", "shoaib@spacialdb.com"]
+  s.email       = ["kashif@decision-labs.com", "shoaib@decision-labs.com"]
   s.homepage    = "https://github.com/spacialdb/fcm"
   s.summary     = %q{Reliably deliver messages and notifications via FCM}
   s.description = %q{fcm provides ruby bindings to Firebase Cloud Messaging (FCM) a cross-platform messaging solution that lets you reliably deliver messages and notifications at no cost to Android, iOS or Web browsers.}
