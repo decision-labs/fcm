@@ -20,11 +20,10 @@ class FCM
     @api_key = api_key
     @client_options = client_options
     @json_key_path = json_key_path
-    @project_base_uri  = BASE_URI_V1+project_name.to_s
+    @project_base_uri = BASE_URI_V1 + project_name.to_s
   end
 
-
-  # See https://firebase.google.com/docs/cloud-messaging/send-message for more details.
+  # See https://firebase.google.com/docs/cloud-messaging/send-message
   # {
   #   "token": "4sdsx",
   #   "notification": {
@@ -53,16 +52,16 @@ class FCM
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    unless @project_base_uri.empty?
-      post_body = { 'message': message }
+    return if @project_base_uri.empty?
 
-      response = Faraday.post("#{@project_base_uri}/messages:send") do |req|
-        req.headers['Content-Type'] = 'application/json'
-        req.headers['Authorization'] = "Bearer #{get_jwt_token}"
-        req.body = post_body.to_json
-      end
-      build_response(response)
+    post_body = { 'message': message }
+
+    response = Faraday.post("#{@project_base_uri}/messages:send") do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.headers['Authorization'] = "Bearer #{jwt_token}"
+      req.body = post_body.to_json
     end
+    build_response(response)
   end
   alias send_v1 send_notification_v1
 
@@ -313,11 +312,12 @@ class FCM
     topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
   end
 
-  def get_jwt_token
+  def jwt_token
     scope = 'https://www.googleapis.com/auth/firebase.messaging'
     authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
       json_key_io: File.open(@json_key_path),
-      scope: scope)
+      scope: scope
+    )
     token = authorizer.fetch_access_token!
     token['access_token']
   end
