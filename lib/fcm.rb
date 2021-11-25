@@ -1,9 +1,11 @@
 require 'faraday'
 require 'cgi'
 require 'json'
+require 'googleauth'
 
 class FCM
   BASE_URI = 'https://fcm.googleapis.com'
+  BASE_URI_V1 = 'https://fcm.googleapis.com/v1/projects/'
   DEFAULT_TIMEOUT = 30
   FORMAT = :json
 
@@ -12,12 +14,56 @@ class FCM
   INSTANCE_ID_API = 'https://iid.googleapis.com'
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
-  attr_accessor :timeout, :api_key
+  attr_accessor :timeout, :api_key, :json_key_path, :project_base_uri
 
-  def initialize(api_key, client_options = {})
+  def initialize(api_key, json_key_path = '', project_name = '', client_options = {})
     @api_key = api_key
     @client_options = client_options
+    @json_key_path = json_key_path
+    @project_base_uri = BASE_URI_V1 + project_name.to_s
   end
+
+  # See https://firebase.google.com/docs/cloud-messaging/send-message
+  # {
+  #   "token": "4sdsx",
+  #   "notification": {
+  #     "title": "Breaking News",
+  #     "body": "New news story available."
+  #   },
+  #   "data": {
+  #     "story_id": "story_12345"
+  #   },
+  #   "android": {
+  #     "notification": {
+  #       "click_action": "TOP_STORY_ACTIVITY",
+  #       "body": "Check out the Top Story"
+  #     }
+  #   },
+  #   "apns": {
+  #     "payload": {
+  #       "aps": {
+  #         "category" : "NEW_MESSAGE_CATEGORY"
+  #       }
+  #     }
+  #   }
+  # }
+  # fcm = FCM.new(api_key, json_key_path, project_name)
+  # fcm.send(
+  #    { "token": "4sdsx",, "to" : "notification": {}.. }
+  # )
+  def send_notification_v1(message)
+    return if @project_base_uri.empty?
+
+    post_body = { 'message': message }
+
+    response = Faraday.post("#{@project_base_uri}/messages:send") do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.headers['Authorization'] = "Bearer #{jwt_token}"
+      req.body = post_body.to_json
+    end
+    build_response(response)
+  end
+  alias send_v1 send_notification_v1
 
   # See https://developers.google.com/cloud-messaging/http for more details.
   # { "notification": {
@@ -264,5 +310,15 @@ class FCM
   def validate_condition_topics?(condition)
     topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
     topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
+  end
+
+  def jwt_token
+    scope = 'https://www.googleapis.com/auth/firebase.messaging'
+    authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+      json_key_io: File.open(@json_key_path),
+      scope: scope
+    )
+    token = authorizer.fetch_access_token!
+    token['access_token']
   end
 end
