@@ -19,12 +19,55 @@ gem 'fcm'
 
 For Android you will need a device running 2.3 (or newer) that also have the Google Play Store app installed, or an emulator running Android 2.3 with Google APIs. iOS devices are also supported.
 
-
 A version of supported Ruby, currently:
 `ruby >= 2.4`
 
-
 ## Usage
+
+## HTTP v1 API
+
+To migrate to HTTP v1 see: https://firebase.google.com/docs/cloud-messaging/migrate-v1
+
+```ruby
+fcm = FCM.new(
+  API_TOKEN,
+  GOOGLE_APPLICATION_CREDENTIALS_PATH,
+  FIREBASE_PROJECT_ID
+)
+message = {
+  'topic': "89023", # OR token if you want to send to a specific device
+  # 'token': "000iddqd",
+  'data': {
+    payload: {
+      data: {
+        id: 1
+      }
+    }.to_json
+  },
+  'notification': {
+    title: notification.title_th,
+    body: notification.body_th,
+  },
+  'android': {},
+  'apns': {
+    payload: {
+      aps: {
+        sound: "default",
+        category: "#{Time.zone.now.to_i}"
+      }
+    }
+  },
+  'fcm_options': {
+    analytics_label: 'Label'
+  }
+}
+
+fcm.send_v1(message)
+```
+
+## HTTP Legacy Version
+
+To migrate to HTTP v1 see: https://firebase.google.com/docs/cloud-messaging/migrate-v1
 
 For your server to send a message to one or more devices, you must first initialise a new `FCM` class with your Firebase Cloud Messaging server key, and then call the `send` method on this and give it 1 or more (up to 1000) registration tokens as an array of strings. You can also optionally send further [HTTP message parameters](https://firebase.google.com/docs/cloud-messaging/http-server-ref) like `data` or `time_to_live` etc. as a hash via the second optional argument to `send`.
 
@@ -166,6 +209,7 @@ You can find a guide to implement an Android Client app to receive notifications
 The guide to set up an iOS app to get notifications is here: [Setting up a FCM Client App on iOS](https://firebase.google.com/docs/cloud-messaging/ios/client).
 
 ## ChangeLog
+
 ### 1.0.3
 
 - Fix overly strict faraday depenecy
