@@ -328,6 +328,10 @@ class FCM
   end
 
   def json_key
-    @json_key ||= (@json_key_path.respond_to?(:read) ? @json_key_path : File.open(@json_key_path))
+    @json_key ||= if @json_key_path.respond_to?(:read)
+      @json_key_path
+    else
+      File.open(@json_key_path)
+    end
   end
 end
