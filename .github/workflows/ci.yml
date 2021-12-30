@@ -7,8 +7,9 @@ on:
   push:
     branches:
       - master
+
 jobs:
-  sqlite:
+  tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,4 +27,4 @@ jobs:
 
       - name: Run tests
         run: |
-          bundle exec rails rspec
+          bundle exec rspec
