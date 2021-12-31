@@ -498,4 +498,16 @@ describe FCM do
   describe "subscribing to a topic" do
     # TODO
   end
+
+  describe "credentials path" do
+    it "can be a path to a file" do
+      fcm = FCM.new("test", "README.md")
+      expect(fcm.__send__(:json_key).class).to eq(File)
+    end
+
+    it "can be an IO object" do
+      fcm = FCM.new("test", StringIO.new("hey"))
+      expect(fcm.__send__(:json_key).class).to eq(StringIO)
+    end
+  end
 end

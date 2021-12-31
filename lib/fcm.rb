@@ -320,10 +320,18 @@ class FCM
   def jwt_token
     scope = "https://www.googleapis.com/auth/firebase.messaging"
     authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: File.open(@json_key_path),
+      json_key_io: json_key,
       scope: scope,
     )
     token = authorizer.fetch_access_token!
     token["access_token"]
+  end
+
+  def json_key
+    @json_key ||= if @json_key_path.respond_to?(:read)
+                    @json_key_path
+                  else
+                    File.open(@json_key_path)
+                  end
   end
 end
