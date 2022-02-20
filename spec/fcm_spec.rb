@@ -499,38 +499,35 @@ describe FCM do
     # TODO
   end
 
-  describe "getting instance info" do
-    subject(:get_instance_info) { client.get_instance_id_info(registration_id, options) }
+  describe 'getting instance info' do
+    subject(:get_info) { client.get_instance_id_info(registration_id, options) }
 
     let(:options) { nil }
     let(:client) { FCM.new("TEST_SERVER_KEY") }
-    let(:uri) { "#{FCM::INSTANCE_ID_API}/iid/info/#{registration_id}" }
-    let(:mock_request_attributes) { {
-      headers: {
-        'Authorization' => 'key=TEST_SERVER_KEY',
-        'Content-Type' => 'application/json'
-      }
-    } }
+    let(:base_uri) { "#{FCM::INSTANCE_ID_API}/iid/info" }
+    let(:uri) { "#{base_uri}/#{registration_id}" }
+    let(:mock_request_attributes) do
+      { headers: {
+          'Authorization' => 'key=TEST_SERVER_KEY',
+          'Content-Type' => 'application/json'
+      } }
+    end
 
-    context "without options" do
-      it "calls info endpoint" do
+    context 'without options' do
+      it 'calls info endpoint' do
         endpoint = stub_request(:get, uri).with(mock_request_attributes)
-
-        get_instance_info
-
+        get_info
         expect(endpoint).to have_been_requested
       end
     end
 
-    context "with detail option" do
-      let(:uri) { "#{FCM::INSTANCE_ID_API}/iid/info/#{registration_id}?details=true" }
-      let(:options) {{ details: true }}
+    context 'with detail option' do
+      let(:uri) { "#{base_uri}/#{registration_id}?details=true" }
+      let(:options) { { details: true } }
 
-      it "calls info endpoint" do
+      it 'calls info endpoint' do
         endpoint = stub_request(:get, uri).with(mock_request_attributes)
-
-        get_instance_info
-
+        get_info
         expect(endpoint).to have_been_requested
       end
     end
