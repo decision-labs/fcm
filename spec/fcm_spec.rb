@@ -503,13 +503,13 @@ describe FCM do
     subject(:get_info) { client.get_instance_id_info(registration_id, options) }
 
     let(:options) { nil }
-    let(:client) { FCM.new("TEST_SERVER_KEY") }
+    let(:client) { FCM.new('TEST_SERVER_KEY') }
     let(:base_uri) { "#{FCM::INSTANCE_ID_API}/iid/info" }
     let(:uri) { "#{base_uri}/#{registration_id}" }
     let(:mock_request_attributes) do
       { headers: {
-          'Authorization' => 'key=TEST_SERVER_KEY',
-          'Content-Type' => 'application/json'
+        'Authorization' => 'key=TEST_SERVER_KEY',
+        'Content-Type' => 'application/json'
       } }
     end
 
