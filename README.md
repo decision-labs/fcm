@@ -210,9 +210,17 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 1.0.7
+
+- Fix passing `DEFAULT_TIMEOUT` to `faraday` [#96](https://github.com/decision-labs/fcm/pull/96)
+- Fix issue with `get_instance_id_info` option params [#98](https://github.com/decision-labs/fcm/pull/98)
+- Accept any IO object for credentials [#95](https://github.com/decision-labs/fcm/pull/94)
+
+Huge thanks to @excid3 @jsparling @jensljungblad
+
 ### 1.0.3
 
-- Fix overly strict faraday depenecy
+- Fix overly strict faraday dependency
 
 ### 1.0.2
 
@@ -232,6 +240,7 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 - Fixed group messaging url.
 - Added API to `recover_notification_key`.
 
+
 ### 0.0.1
 
 - Initial version.
@@ -250,7 +259,7 @@ Update version in `fcm.gemspec` with `VERSION` and update `README.md` `## Change
 
 ```bash
 # set the version
-# VERSION="1.0.4"
+# VERSION="1.0.7"
 gem build fcm.gemspec
 git tag -a v${VERSION} -m "Releasing version v${VERSION}"
 git push origin --tags
