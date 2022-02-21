@@ -222,7 +222,10 @@ class FCM
   private
 
   def for_uri(uri, extra_headers = {})
-    connection = ::Faraday.new(:url => uri) do |faraday|
+    connection = ::Faraday.new(
+      url: uri,
+      request: { timeout: DEFAULT_TIMEOUT }
+    ) do |faraday|
       faraday.adapter Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "key=#{api_key}"
