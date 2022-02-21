@@ -499,6 +499,40 @@ describe FCM do
     # TODO
   end
 
+  describe 'getting instance info' do
+    subject(:get_info) { client.get_instance_id_info(registration_id, options) }
+
+    let(:options) { nil }
+    let(:client) { FCM.new('TEST_SERVER_KEY') }
+    let(:base_uri) { "#{FCM::INSTANCE_ID_API}/iid/info" }
+    let(:uri) { "#{base_uri}/#{registration_id}" }
+    let(:mock_request_attributes) do
+      { headers: {
+        'Authorization' => 'key=TEST_SERVER_KEY',
+        'Content-Type' => 'application/json'
+      } }
+    end
+
+    context 'without options' do
+      it 'calls info endpoint' do
+        endpoint = stub_request(:get, uri).with(mock_request_attributes)
+        get_info
+        expect(endpoint).to have_been_requested
+      end
+    end
+
+    context 'with detail option' do
+      let(:uri) { "#{base_uri}/#{registration_id}?details=true" }
+      let(:options) { { details: true } }
+
+      it 'calls info endpoint' do
+        endpoint = stub_request(:get, uri).with(mock_request_attributes)
+        get_info
+        expect(endpoint).to have_been_requested
+      end
+    end
+  end
+
   describe "credentials path" do
     it "can be a path to a file" do
       fcm = FCM.new("test", "README.md")

@@ -188,9 +188,7 @@ class FCM
   end
 
   def get_instance_id_info(iid_token, options = {})
-    params = {
-      query: options,
-    }
+    params = options
 
     for_uri(INSTANCE_ID_API) do |connection|
       response = connection.get("/iid/info/" + iid_token, params)
