@@ -210,6 +210,10 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 1.0.8
+- caches calls to `Google::Auth::ServiceAccountCredentials` #103
+- Allow `faraday` versions from 1 up to 2  #101
+
 ### 1.0.7
 
 - Fix passing `DEFAULT_TIMEOUT` to `faraday` [#96](https://github.com/decision-labs/fcm/pull/96)
