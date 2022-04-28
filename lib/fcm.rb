@@ -50,16 +50,16 @@ class FCM
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    return if @project_base_uri.empty?
+    return if @project_name.empty?
 
     post_body = { 'message': message }
-
-    response = Faraday.post("#{@project_base_uri}/messages:send") do |req|
-      req.headers["Content-Type"] = "application/json"
-      req.headers["Authorization"] = "Bearer #{jwt_token}"
-      req.body = post_body.to_json
+    extra_headers = {
+      "Authorization" => "Bearer #{jwt_token}"
+    }
+    for_uri(BASE_URI_V1, extra_headers) do |connection|
+      response = connection.post("#{@project_name}/messages:send", post_body.to_json)
+      build_response(response)
     end
-    build_response(response)
   end
 
   alias send_v1 send_notification_v1
