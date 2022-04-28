@@ -24,7 +24,73 @@ describe FCM do
   end
 
   describe "#send_v1" do
-    pending "should send message"
+    let(:project_name) { "project_name" }
+    let(:send_v1_url) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:access_token) { "access_token" }
+    let(:valid_request_v1_headers) do
+      {
+        "Content-Type" => "application/json",
+        "Authorization" => "Bearer #{access_token}",
+      }
+    end
+
+    let(:send_v1_params) do
+      {
+        "token" => "4sdsx",
+        "notification" => {
+          "title" => "Breaking News",
+          "body" => "New news story available."
+        },
+        "data" => {
+          "story_id" => "story_12345"
+        },
+        "android" => {
+          "notification" => {
+            "click_action": "TOP_STORY_ACTIVITY",
+            "body" => "Check out the Top Story"
+          }
+        },
+        "apns" => {
+          "payload" => {
+            "aps" => {
+              "category"  => "NEW_MESSAGE_CATEGORY"
+            }
+          }
+        }
+      }
+    end
+
+    let(:valid_request_v1_body) do
+      { "message" => send_v1_params }
+    end
+
+    let(:stub_fcm_send_v1_request) do
+      stub_request(:post, send_v1_url).with(
+        body: valid_request_v1_body.to_json,
+        headers: valid_request_v1_headers,
+      ).to_return(
+        # ref: https://firebase.google.com/docs/cloud-messaging/http-server-ref#interpret-downstream
+        body: "{}",
+        headers: {},
+        status: 200,
+      )
+    end
+
+    let(:authorizer_double) { double("token_fetcher") }
+    let(:json_key_path) { double("file alike object") }
+
+    before do
+      expect(json_key_path).to receive(:respond_to?).and_return(true)
+      expect(Google::Auth::ServiceAccountCredentials).to receive_message_chain(:make_creds).and_return(authorizer_double)
+      expect(authorizer_double).to receive(:fetch_access_token!).and_return({ "access_token" => access_token })
+      stub_fcm_send_v1_request
+    end
+
+    it "should send notification of HTTP V1 using POST to FCM server" do
+      fcm = FCM.new(api_key, json_key_path, project_name)
+      fcm.send_v1(send_v1_params).should eq(response: "success", body: "{}", headers: {}, status_code: 200)
+      stub_fcm_send_v1_request.should have_been_made.times(1)
+    end
   end
 
   describe "sending notification" do
