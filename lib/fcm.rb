@@ -7,7 +7,6 @@ class FCM
   BASE_URI = "https://fcm.googleapis.com"
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
   DEFAULT_TIMEOUT = 30
-  FORMAT = :json
 
   # constants
   GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
