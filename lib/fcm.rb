@@ -12,13 +12,11 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
-  attr_accessor :api_key, :json_key_path, :project_base_uri
-
   def initialize(api_key, json_key_path = "", project_name = "", client_options = {})
     @api_key = api_key
     @client_options = client_options
     @json_key_path = json_key_path
-    @project_base_uri = BASE_URI_V1 + project_name.to_s
+    @project_name = project_name
   end
 
   # See https://firebase.google.com/docs/cloud-messaging/send-message
@@ -226,7 +224,7 @@ class FCM
     ) do |faraday|
       faraday.adapter Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
-      faraday.headers["Authorization"] = "key=#{api_key}"
+      faraday.headers["Authorization"] = "key=#{@api_key}"
       extra_headers.each do |key, value|
         faraday.headers[key] = value
       end
