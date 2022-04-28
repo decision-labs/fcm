@@ -36,24 +36,24 @@ describe FCM do
 
     let(:send_v1_params) do
       {
-        "token" => "4sdsx",
-        "notification" => {
-          "title" => "Breaking News",
-          "body" => "New news story available."
+        'token' => '4sdsx',
+        'notification' => {
+          'title' => 'Breaking News',
+          'body' => 'New news story available.'
         },
-        "data" => {
-          "story_id" => "story_12345"
+        'data' => {
+          'story_id' => 'story_12345'
         },
-        "android" => {
-          "notification" => {
-            "click_action": "TOP_STORY_ACTIVITY",
-            "body" => "Check out the Top Story"
+        'android' => {
+          'notification' => {
+            'click_action' => 'TOP_STORY_ACTIVITY',
+            'body' => 'Check out the Top Story'
           }
         },
-        "apns" => {
-          "payload" => {
-            "aps" => {
-              "category"  => "NEW_MESSAGE_CATEGORY"
+        'apns' => {
+          'payload' => {
+            'aps' => {
+              'category' => 'NEW_MESSAGE_CATEGORY'
             }
           }
         }
@@ -61,13 +61,13 @@ describe FCM do
     end
 
     let(:valid_request_v1_body) do
-      { "message" => send_v1_params }
+      { 'message' => send_v1_params }
     end
 
     let(:stub_fcm_send_v1_request) do
       stub_request(:post, send_v1_url).with(
         body: valid_request_v1_body.to_json,
-        headers: valid_request_v1_headers,
+        headers: valid_request_v1_headers
       ).to_return(
         # ref: https://firebase.google.com/docs/cloud-messaging/http-server-ref#interpret-downstream
         body: "{}",
@@ -86,9 +86,11 @@ describe FCM do
       stub_fcm_send_v1_request
     end
 
-    it "should send notification of HTTP V1 using POST to FCM server" do
+    it 'should send notification of HTTP V1 using POST to FCM server' do
       fcm = FCM.new(api_key, json_key_path, project_name)
-      fcm.send_v1(send_v1_params).should eq(response: "success", body: "{}", headers: {}, status_code: 200)
+      fcm.send_v1(send_v1_params).should eq(
+        response: 'success', body: '{}', headers: {}, status_code: 200
+      )
       stub_fcm_send_v1_request.should have_been_made.times(1)
     end
   end
