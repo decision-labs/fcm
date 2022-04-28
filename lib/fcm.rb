@@ -7,20 +7,16 @@ class FCM
   BASE_URI = "https://fcm.googleapis.com"
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
   DEFAULT_TIMEOUT = 30
-  FORMAT = :json
 
-  # constants
   GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
-
-  attr_accessor :timeout, :api_key, :json_key_path, :project_base_uri
 
   def initialize(api_key, json_key_path = "", project_name = "", client_options = {})
     @api_key = api_key
     @client_options = client_options
     @json_key_path = json_key_path
-    @project_base_uri = BASE_URI_V1 + project_name.to_s
+    @project_name = project_name
   end
 
   # See https://firebase.google.com/docs/cloud-messaging/send-message
@@ -48,20 +44,22 @@ class FCM
   #   }
   # }
   # fcm = FCM.new(api_key, json_key_path, project_name)
-  # fcm.send(
+  # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    return if @project_base_uri.empty?
+    return if @project_name.empty?
 
     post_body = { 'message': message }
-
-    response = Faraday.post("#{@project_base_uri}/messages:send") do |req|
-      req.headers["Content-Type"] = "application/json"
-      req.headers["Authorization"] = "Bearer #{jwt_token}"
-      req.body = post_body.to_json
+    extra_headers = {
+      'Authorization' => "Bearer #{jwt_token}"
+    }
+    for_uri(BASE_URI_V1, extra_headers) do |connection|
+      response = connection.post(
+        "#{@project_name}/messages:send", post_body.to_json
+      )
+      build_response(response)
     end
-    build_response(response)
   end
 
   alias send_v1 send_notification_v1
@@ -228,7 +226,7 @@ class FCM
     ) do |faraday|
       faraday.adapter Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
-      faraday.headers["Authorization"] = "key=#{api_key}"
+      faraday.headers['Authorization'] = "key=#{@api_key}"
       extra_headers.each do |key, value|
         faraday.headers[key] = value
       end
