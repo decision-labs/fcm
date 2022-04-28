@@ -8,7 +8,6 @@ class FCM
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
   DEFAULT_TIMEOUT = 30
 
-  # constants
   GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
@@ -47,7 +46,7 @@ class FCM
   #   }
   # }
   # fcm = FCM.new(api_key, json_key_path, project_name)
-  # fcm.send(
+  # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
