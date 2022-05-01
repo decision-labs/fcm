@@ -50,16 +50,12 @@ class FCM
   def send_notification_v1(message)
     return if @project_name.empty?
 
-    post_body = { 'message': message }
-    extra_headers = {
-      'Authorization' => "Bearer #{jwt_token}"
-    }
-    for_uri(BASE_URI_V1, extra_headers) do |connection|
-      response = connection.post(
-        "#{@project_name}/messages:send", post_body.to_json
-      )
-      build_response(response)
-    end
+    post_body = { 'message': message }.to_json
+    end_point = "#{@project_name}/messages:send"
+    extra_headers = { 'Authorization' => "Bearer #{jwt_token}" }
+
+    res = perform_request(:post, BASE_URI_V1, end_point, post_body, **extra_headers)
+    build_response(res)
   end
 
   alias send_v1 send_notification_v1
@@ -78,11 +74,10 @@ class FCM
   # )
   def send_notification(registration_ids, options = {})
     post_body = build_post_body(registration_ids, options)
+    end_point = '/fcm/send'
 
-    for_uri(BASE_URI) do |connection|
-      response = connection.post("/fcm/send", post_body.to_json)
-      build_response(response, registration_ids)
-    end
+    res = perform_request(:post, BASE_URI, end_point, post_body)
+    build_response(res, registration_ids)
   end
 
   alias send send_notification
@@ -95,10 +90,10 @@ class FCM
       "project_id" => project_id,
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    end_point = 'gcm/notification'
+
+    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    build_response(res)
   end
 
   alias create create_notification_key
@@ -108,14 +103,13 @@ class FCM
                                                   notification_key_name: key_name,
                                                   notification_key: notification_key)
 
+    end_point = '/gcm/notification'
     extra_headers = {
       "project_id" => project_id,
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    build_response(res)
   end
 
   alias add add_registration_ids
@@ -125,14 +119,13 @@ class FCM
                                                   notification_key_name: key_name,
                                                   notification_key: notification_key)
 
+    end_point = 'gcm/notification'
     extra_headers = {
       "project_id" => project_id,
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    build_response(res)
   end
 
   alias remove remove_registration_ids
@@ -140,14 +133,13 @@ class FCM
   def recover_notification_key(key_name, project_id)
     params = { notification_key_name: key_name }
 
+    end_point = 'gcm/notification'
     extra_headers = {
       "project_id" => project_id,
     }
 
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.get("/gcm/notification", params)
-      build_response(response)
-    end
+    res = perform_request(:get, GROUP_NOTIFICATION_BASE_URI, end_point, params, **extra_headers)
+    build_response(res)
   end
 
   def send_with_notification_key(notification_key, options = {})
@@ -156,10 +148,9 @@ class FCM
   end
 
   def topic_subscription(topic, registration_id)
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.post("/iid/v1/#{registration_id}/rel/topics/#{topic}")
-      build_response(response)
-    end
+    end_point = "/iid/v1/#{registration_id}/rel/topics/#{topic}"
+    res = perform_request(:post, INSTANCE_ID_API, end_point)
+    build_response(res)
   end
 
   def batch_topic_subscription(topic, registration_ids)
@@ -171,12 +162,11 @@ class FCM
   end
 
   def manage_topics_relationship(topic, registration_ids, action)
-    body = { to: "/topics/#{topic}", registration_tokens: registration_ids }
+    post_body = { to: "/topics/#{topic}", registration_tokens: registration_ids }.to_json
+    end_point = "/iid/v1:batch#{action}"
 
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.post("/iid/v1:batch#{action}", body.to_json)
-      build_response(response)
-    end
+    res = perform_request(:post, INSTANCE_ID_API, end_point, post_body)
+    build_response(res)
   end
 
   def send_to_topic(topic, options = {})
@@ -188,10 +178,9 @@ class FCM
   def get_instance_id_info(iid_token, options = {})
     params = options
 
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.get("/iid/info/" + iid_token, params)
-      build_response(response)
-    end
+    end_point = "/iid/info/" + iid_token
+    res = perform_request(:get, INSTANCE_ID_API, end_point, params)
+    build_response(res)
   end
 
   def subscribe_instance_id_to_topic(iid_token, topic_name)
@@ -292,10 +281,9 @@ class FCM
   end
 
   def execute_notification(body)
-    for_uri(BASE_URI) do |connection|
-      response = connection.post("/fcm/send", body.to_json)
-      build_response(response)
-    end
+    end_point = '/fcm/send'
+    res = perform_request(:post, BASE_URI, end_point, body.to_json)
+    build_response(res)
   end
 
   def has_canonical_id?(result)
