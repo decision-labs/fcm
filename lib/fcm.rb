@@ -219,19 +219,26 @@ class FCM
 
   private
 
-  def for_uri(uri, extra_headers = {})
-    connection = ::Faraday.new(
-      url: uri,
-      request: { timeout: DEFAULT_TIMEOUT }
-    ) do |faraday|
-      faraday.adapter Faraday.default_adapter
-      faraday.headers["Content-Type"] = "application/json"
-      faraday.headers['Authorization'] = "key=#{@api_key}"
+
+  def perform_request(method, base_uri, end_point, body, **extra_headers)
+    conn_settings(method, base_uri) do |conn|
+
+      conn.headers["Content-Type"] = "application/json"
+      conn.headers['Authorization'] = "key=#{@api_key}"
+
       extra_headers.each do |key, value|
-        faraday.headers[key] = value
+        conn.headers[key] = value
       end
+      conn.send(method, end_point, body)
     end
-    yield connection
+  end
+
+  def conn_settings(method, base_uri)
+    conn = ::Faraday.new(
+      url: base_uri,
+      request: { timeout: DEFAULT_TIMEOUT }
+    )
+    yield conn
   end
 
   def build_post_body(registration_ids, options = {})
