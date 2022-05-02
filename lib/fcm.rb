@@ -54,7 +54,9 @@ class FCM
     end_point = "#{@project_name}/messages:send"
     extra_headers = { 'Authorization' => "Bearer #{jwt_token}" }
 
-    res = perform_request(:post, BASE_URI_V1, end_point, post_body, **extra_headers)
+    res = perform_request(
+      :post, BASE_URI_V1, end_point, post_body, **extra_headers
+    )
     build_response(res)
   end
 
@@ -92,7 +94,9 @@ class FCM
 
     end_point = 'gcm/notification'
 
-    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    res = perform_request(
+      :post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers
+    )
     build_response(res)
   end
 
@@ -108,7 +112,9 @@ class FCM
       "project_id" => project_id,
     }
 
-    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    res = perform_request(
+      :post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers
+    )
     build_response(res)
   end
 
@@ -124,7 +130,9 @@ class FCM
       "project_id" => project_id,
     }
 
-    res = perform_request(:post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers)
+    res = perform_request(
+      :post, GROUP_NOTIFICATION_BASE_URI, end_point, post_body, **extra_headers
+    )
     build_response(res)
   end
 
@@ -138,7 +146,9 @@ class FCM
       "project_id" => project_id,
     }
 
-    res = perform_request(:get, GROUP_NOTIFICATION_BASE_URI, end_point, params, **extra_headers)
+    res = perform_request(
+      :get, GROUP_NOTIFICATION_BASE_URI, end_point, params, **extra_headers
+    )
     build_response(res)
   end
 
@@ -162,7 +172,9 @@ class FCM
   end
 
   def manage_topics_relationship(topic, registration_ids, action)
-    post_body = { to: "/topics/#{topic}", registration_tokens: registration_ids }.to_json
+    post_body = {
+      to: "/topics/#{topic}", registration_tokens: registration_ids
+    }.to_json
     end_point = "/iid/v1:batch#{action}"
 
     res = perform_request(:post, INSTANCE_ID_API, end_point, post_body)
@@ -171,7 +183,7 @@ class FCM
 
   def send_to_topic(topic, options = {})
     if topic.gsub(TOPIC_REGEX, "").length == 0
-      send_with_notification_key("/topics/" + topic, options)
+      send_with_notification_key('/topics/' + topic, options)
     end
   end
 
@@ -208,11 +220,9 @@ class FCM
 
   private
 
-
   def perform_request(method, base_uri, end_point, body, **extra_headers)
-    conn_settings(method, base_uri) do |conn|
-
-      conn.headers["Content-Type"] = "application/json"
+    conn_settings(base_uri) do |conn|
+      conn.headers['Content-Type'] = 'application/json'
       conn.headers['Authorization'] = "key=#{@api_key}"
 
       extra_headers.each do |key, value|
@@ -222,7 +232,7 @@ class FCM
     end
   end
 
-  def conn_settings(method, base_uri)
+  def conn_settings(base_uri)
     conn = ::Faraday.new(
       url: base_uri,
       request: { timeout: DEFAULT_TIMEOUT }
