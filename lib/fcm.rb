@@ -190,7 +190,7 @@ class FCM
   def get_instance_id_info(iid_token, options = {})
     params = options
 
-    end_point = "/iid/info/" + iid_token
+    end_point = '/iid/info/' + iid_token
     res = perform_request(:get, INSTANCE_ID_API, end_point, params)
     build_response(res)
   end
