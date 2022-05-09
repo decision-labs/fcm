@@ -12,9 +12,8 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
 
-  def initialize(api_key, json_key_path = "", project_name = "", client_options = {})
+  def initialize(api_key, json_key_path = "", project_name = "")
     @api_key = api_key
-    @client_options = client_options
     @json_key_path = json_key_path
     @project_name = project_name
   end
