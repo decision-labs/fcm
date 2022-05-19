@@ -1,7 +1,8 @@
+require 'simplecov'
+SimpleCov.start
 require 'rubygems'
 require 'bundler/setup'
 require 'webmock/rspec'
-
 require 'fcm'
 
 RSpec.configure do |config|
