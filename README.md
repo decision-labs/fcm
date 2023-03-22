@@ -22,6 +22,41 @@ For Android you will need a device running 2.3 (or newer) that also have the Goo
 A version of supported Ruby, currently:
 `ruby >= 2.4`
 
+## Getting Started
+To use this gem, you need to instantiate a client with your firebase credentials:
+
+```ruby
+fcm = FCM.new(
+  API_TOKEN,
+  GOOGLE_APPLICATION_CREDENTIALS_PATH,
+  FIREBASE_PROJECT_ID
+)
+```
+
+## About the `GOOGLE_APPLICATION_CREDENTIALS_PATH`
+The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase credentials.
+
+The easiest way to provide them is to pass here an absolute path to a file with your credentials:
+
+```ruby
+fcm = FCM.new(
+  API_TOKEN,
+  '/path/to/credentials.json',
+  FIREBASE_PROJECT_ID
+)
+```
+
+As per their secret nature, you might not want to have them in your repository. In that case, another supported solution is to pass a `StringIO` that contains your credentials:
+
+```ruby
+fcm = FCM.new(
+  API_TOKEN,
+  StringIO.new(ENV.fetch('FIREBASE_CREDENTIALS')),
+  FIREBASE_PROJECT_ID
+)
+
+```
+
 ## Usage
 
 ## HTTP v1 API
