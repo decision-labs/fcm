@@ -1,0 +1,37 @@
+# default rule used by hound
+# @see https://github.com/houndci/hound/blob/master/.rubocop.yml
+require: rubocop-rspec
+
+AllCops:
+  Exclude:
+    - spec/spec_helper.rb
+    - vendor/**/*
+    - fcm.gemspec
+    - Gemfile
+    - Rakefile
+    - lib/fcm.rb
+
+Metrics/LineLength:
+  Description: 'Limit lines to 85 characters.'
+  StyleGuide: '#80-character-limits'
+  Max: 85
+  Enabled: true
+
+Metrics/MethodLength:
+  Description: 'Avoid methods longer than 25 lines of code.'
+  StyleGuide: '#short-methods'
+  Max: 25
+  Enabled: true
+
+Metrics/BlockLength:
+  Exclude:
+    - spec/fcm_spec.rb
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 10
+
+RSpec/ExampleLength:
+  Max: 15
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 15

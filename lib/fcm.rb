@@ -1,329 +1,225 @@
-require "faraday"
-require "cgi"
-require "json"
-require "googleauth"
+# frozen_string_literal: true
+
+require 'googleauth'
+require 'fcm/client'
+require 'fcm/client_v1'
 
 class FCM
-  BASE_URI = "https://fcm.googleapis.com"
-  BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
-  DEFAULT_TIMEOUT = 30
+  BASE_URI = Fcm::Client::BASE_URI
+  BASE_URI_V1 = Fcm::ClientV1::BASE_URI_V1
+  DEFAULT_TIMEOUT = Fcm::Connection::DEFAULT_TIMEOUT
 
-  GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
-  INSTANCE_ID_API = "https://iid.googleapis.com"
-  TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
+  GROUP_NOTIFICATION_BASE_URI = Fcm::Client::GROUP_NOTIFICATION_BASE_URI
+  INSTANCE_ID_API = Fcm::Client::INSTANCE_ID_API
 
-  def initialize(api_key, json_key_path = "", project_name = "", client_options = {})
+  def initialize(api_key, json_key_path = '', project_name = '')
     @api_key = api_key
-    @client_options = client_options
     @json_key_path = json_key_path
     @project_name = project_name
   end
 
-  # See https://firebase.google.com/docs/cloud-messaging/send-message
-  # {
-  #   "token": "4sdsx",
-  #   "notification": {
-  #     "title": "Breaking News",
-  #     "body": "New news story available."
-  #   },
-  #   "data": {
-  #     "story_id": "story_12345"
-  #   },
-  #   "android": {
+  # @param message [Hash] message hash
+  # @see https://firebase.google.com/docs/cloud-messaging/send-message
+  # @example
+  #
+  #   message = {
+  #     "token": "4sdsx",
   #     "notification": {
-  #       "click_action": "TOP_STORY_ACTIVITY",
-  #       "body": "Check out the Top Story"
-  #     }
-  #   },
-  #   "apns": {
-  #     "payload": {
-  #       "aps": {
-  #         "category" : "NEW_MESSAGE_CATEGORY"
+  #       "title": "Breaking News",
+  #       "body": "New news story available."
+  #     },
+  #     "data": {
+  #       "story_id": "story_12345"
+  #     },
+  #     "android": {
+  #       "notification": {
+  #         "click_action": "TOP_STORY_ACTIVITY",
+  #         "body": "Check out the Top Story"
+  #       }
+  #     },
+  #     "apns": {
+  #       "payload": {
+  #         "aps": {
+  #           "category" : "NEW_MESSAGE_CATEGORY"
+  #         }
   #       }
   #     }
   #   }
-  # }
-  # fcm = FCM.new(api_key, json_key_path, project_name)
-  # fcm.send_v1(
-  #    { "token": "4sdsx",, "to" : "notification": {}.. }
-  # )
+  #
+  #   fcm = FCM.new(api_key, json_key_path, project_name)
+  #
+  #   fcm.send_v1(message)
+  #
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::ClientV1#send_notification_v1} instead
   def send_notification_v1(message)
-    return if @project_name.empty?
+    warn '[DEPRECATION] `FCM#send_notification_v1` will be deprecated.'\
+    'Use`Fcm::ClientV1.new(json_key_path).send_notification_v1` instead.'
 
-    post_body = { 'message': message }
-    extra_headers = {
-      'Authorization' => "Bearer #{jwt_token}"
-    }
-    for_uri(BASE_URI_V1, extra_headers) do |connection|
-      response = connection.post(
-        "#{@project_name}/messages:send", post_body.to_json
-      )
-      build_response(response)
-    end
+    Fcm::ClientV1.new(@json_key_path).send_notification_v1(
+      message, @project_name
+    )
   end
-
   alias send_v1 send_notification_v1
 
-  # See https://developers.google.com/cloud-messaging/http for more details.
-  # { "notification": {
-  #  "title": "Portugal vs. Denmark",
-  #  "text": "5 to 1"
-  # },
-  # "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
-  # }
-  # fcm = FCM.new("API_KEY")
-  # fcm.send(
-  #    ["4sdsx", "8sdsd"], # registration_ids
-  #    { "notification": { "title": "Portugal vs. Denmark", "text": "5 to 1" }, "to" : "bk3RNwTe3HdFQ3P1..." }
-  # )
+  # @see https://developers.google.com/cloud-messaging/http
+  # @example
+  #   message = { "notification": {
+  #    "title": "Portugal vs. Denmark",
+  #    "text": "5 to 1"
+  #   },
+  #   "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
+  #   }
+  #   fcm = FCM.new("API_KEY")
+  #   fcm.send(
+  #      ["4sdsx", "8sdsd"], # registration_ids
+  #      message
+  #   )
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#send_notification_v1} instead
   def send_notification(registration_ids, options = {})
-    post_body = build_post_body(registration_ids, options)
-
-    for_uri(BASE_URI) do |connection|
-      response = connection.post("/fcm/send", post_body.to_json)
-      build_response(response, registration_ids)
-    end
+    deprecate_warning(:send_notification)
+    Fcm::Client.new(@api_key).send_notification(registration_ids, options)
   end
 
   alias send send_notification
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#create_notification_key} instead
   def create_notification_key(key_name, project_id, registration_ids = [])
-    post_body = build_post_body(registration_ids, operation: "create",
-                                                  notification_key_name: key_name)
-
-    extra_headers = {
-      "project_id" => project_id,
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    deprecate_warning(:create_notification_key)
+    Fcm::Client.new(@api_key).create_notification_key(
+      key_name, project_id, registration_ids
+    )
   end
 
   alias create create_notification_key
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#add_registration_ids} instead
   def add_registration_ids(key_name, project_id, notification_key, registration_ids)
-    post_body = build_post_body(registration_ids, operation: "add",
-                                                  notification_key_name: key_name,
-                                                  notification_key: notification_key)
-
-    extra_headers = {
-      "project_id" => project_id,
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    deprecate_warning(:add_registration_ids)
+    Fcm::Client.new(@api_key).add_registration_ids(
+      key_name, project_id, notification_key, registration_ids
+    )
   end
 
   alias add add_registration_ids
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#remove_registration_ids} instead
   def remove_registration_ids(key_name, project_id, notification_key, registration_ids)
-    post_body = build_post_body(registration_ids, operation: "remove",
-                                                  notification_key_name: key_name,
-                                                  notification_key: notification_key)
-
-    extra_headers = {
-      "project_id" => project_id,
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.post("/gcm/notification", post_body.to_json)
-      build_response(response)
-    end
+    deprecate_warning(:remove_registration_ids)
+    Fcm::Client.new(@api_key).remove_registration_ids(
+      key_name, project_id, notification_key, registration_ids
+    )
   end
 
   alias remove remove_registration_ids
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#recover_notification_key} instead
   def recover_notification_key(key_name, project_id)
-    params = { notification_key_name: key_name }
-
-    extra_headers = {
-      "project_id" => project_id,
-    }
-
-    for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
-      response = connection.get("/gcm/notification", params)
-      build_response(response)
-    end
+    deprecate_warning(:recover_notification_key)
+    Fcm::Client.new(@api_key).recover_notification_key(key_name, project_id)
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#send_with_notification_key} instead
   def send_with_notification_key(notification_key, options = {})
-    body = { to: notification_key }.merge(options)
-    execute_notification(body)
+    deprecate_warning(:send_with_notification_key)
+    Fcm::Client.new(@api_key).send_with_notification_key(
+      notification_key, options
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#topic_subscription} instead
   def topic_subscription(topic, registration_id)
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.post("/iid/v1/#{registration_id}/rel/topics/#{topic}")
-      build_response(response)
-    end
+    deprecate_warning(:topic_subscription)
+    Fcm::Client.new(@api_key).topic_subscription(topic, registration_id)
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#batch_topic_subscription} instead
   def batch_topic_subscription(topic, registration_ids)
-    manage_topics_relationship(topic, registration_ids, "Add")
+    deprecate_warning(:batch_topic_subscription)
+    Fcm::Client.new(@api_key).batch_topic_subscription(
+      topic, registration_ids
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#batch_topic_unsubscription} instead
   def batch_topic_unsubscription(topic, registration_ids)
-    manage_topics_relationship(topic, registration_ids, "Remove")
+    deprecate_warning(:batch_topic_unsubscription)
+    Fcm::Client.new(@api_key).batch_topic_unsubscription(
+      topic, registration_ids
+    )
   end
 
-  def manage_topics_relationship(topic, registration_ids, action)
-    body = { to: "/topics/#{topic}", registration_tokens: registration_ids }
-
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.post("/iid/v1:batch#{action}", body.to_json)
-      build_response(response)
-    end
-  end
-
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#send_to_topic} instead
   def send_to_topic(topic, options = {})
-    if topic.gsub(TOPIC_REGEX, "").length == 0
-      send_with_notification_key("/topics/" + topic, options)
-    end
+    deprecate_warning(:send_to_topic)
+    Fcm::Client.new(@api_key).send_to_topic(topic, options)
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#get_instance_id_info} instead
   def get_instance_id_info(iid_token, options = {})
-    params = options
-
-    for_uri(INSTANCE_ID_API) do |connection|
-      response = connection.get("/iid/info/" + iid_token, params)
-      build_response(response)
-    end
+    deprecate_warning(:get_instance_id_info)
+    Fcm::Client.new(@api_key).get_instance_id_info(iid_token, options)
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#subscribe_instance_id_to_topic} instead
   def subscribe_instance_id_to_topic(iid_token, topic_name)
-    batch_subscribe_instance_ids_to_topic([iid_token], topic_name)
+    deprecate_warning(:subscribe_instance_id_to_topic)
+    Fcm::Client.new(@api_key).subscribe_instance_id_to_topic(
+      iid_token, topic_name
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#unsubscribe_instance_id_from_topic} instead
   def unsubscribe_instance_id_from_topic(iid_token, topic_name)
-    batch_unsubscribe_instance_ids_from_topic([iid_token], topic_name)
+    deprecate_warning(:unsubscribe_instance_id_from_topic)
+    Fcm::Client.new(@api_key).unsubscribe_instance_id_from_topic(
+      iid_token, topic_name
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#batch_subscribe_instance_ids_to_topic} instead
   def batch_subscribe_instance_ids_to_topic(instance_ids, topic_name)
-    manage_topics_relationship(topic_name, instance_ids, "Add")
+    deprecate_warning(:batch_subscribe_instance_ids_to_topic)
+    Fcm::Client.new(@api_key).batch_subscribe_instance_ids_to_topic(
+      instance_ids, topic_name
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#batch_unsubscribe_instance_ids_from_topic} instead
   def batch_unsubscribe_instance_ids_from_topic(instance_ids, topic_name)
-    manage_topics_relationship(topic_name, instance_ids, "Remove")
+    deprecate_warning(:batch_unsubscribe_instance_ids_from_topic)
+    Fcm::Client.new(@api_key).batch_unsubscribe_instance_ids_from_topic(
+      instance_ids, topic_name
+    )
   end
 
+  # @return [Fcm::Response] a custom fcm response hash
+  # @deprecated Use {Fcm::Client#send_to_topic_condition} instead
   def send_to_topic_condition(condition, options = {})
-    if validate_condition?(condition)
-      body = { condition: condition }.merge(options)
-      execute_notification(body)
-    end
+    deprecate_warning(:send_to_topic_condition)
+    Fcm::Client.new(@api_key).send_to_topic_condition(condition, options)
   end
 
   private
 
-  def for_uri(uri, extra_headers = {})
-    connection = ::Faraday.new(
-      url: uri,
-      request: { timeout: DEFAULT_TIMEOUT }
-    ) do |faraday|
-      faraday.adapter Faraday.default_adapter
-      faraday.headers["Content-Type"] = "application/json"
-      faraday.headers['Authorization'] = "key=#{@api_key}"
-      extra_headers.each do |key, value|
-        faraday.headers[key] = value
-      end
-    end
-    yield connection
-  end
-
-  def build_post_body(registration_ids, options = {})
-    ids = registration_ids.is_a?(String) ? [registration_ids] : registration_ids
-    { registration_ids: ids }.merge(options)
-  end
-
-  def build_response(response, registration_ids = [])
-    body = response.body || {}
-    response_hash = { body: body, headers: response.headers, status_code: response.status }
-    case response.status
-    when 200
-      response_hash[:response] = "success"
-      body = JSON.parse(body) unless body.empty?
-      response_hash[:canonical_ids] = build_canonical_ids(body, registration_ids) unless registration_ids.empty?
-      response_hash[:not_registered_ids] = build_not_registered_ids(body, registration_ids) unless registration_ids.empty?
-    when 400
-      response_hash[:response] = "Only applies for JSON requests. Indicates that the request could not be parsed as JSON, or it contained invalid fields."
-    when 401
-      response_hash[:response] = "There was an error authenticating the sender account."
-    when 503
-      response_hash[:response] = "Server is temporarily unavailable."
-    when 500..599
-      response_hash[:response] = "There was an internal error in the FCM server while trying to process the request."
-    end
-    response_hash
-  end
-
-  def build_canonical_ids(body, registration_ids)
-    canonical_ids = []
-    unless body.empty?
-      if body["canonical_ids"] > 0
-        body["results"].each_with_index do |result, index|
-          canonical_ids << { old: registration_ids[index], new: result["registration_id"] } if has_canonical_id?(result)
-        end
-      end
-    end
-    canonical_ids
-  end
-
-  def build_not_registered_ids(body, registration_id)
-    not_registered_ids = []
-    unless body.empty?
-      if body["failure"] > 0
-        body["results"].each_with_index do |result, index|
-          not_registered_ids << registration_id[index] if is_not_registered?(result)
-        end
-      end
-    end
-    not_registered_ids
-  end
-
-  def execute_notification(body)
-    for_uri(BASE_URI) do |connection|
-      response = connection.post("/fcm/send", body.to_json)
-      build_response(response)
-    end
-  end
-
-  def has_canonical_id?(result)
-    !result["registration_id"].nil?
-  end
-
-  def is_not_registered?(result)
-    result["error"] == "NotRegistered"
-  end
-
-  def validate_condition?(condition)
-    validate_condition_format?(condition) && validate_condition_topics?(condition)
-  end
-
-  def validate_condition_format?(condition)
-    bad_characters = condition.gsub(
-      /(topics|in|\s|\(|\)|(&&)|[!]|(\|\|)|'([a-zA-Z0-9\-_.~%]+)')/,
-      ""
-    )
-    bad_characters.length == 0
-  end
-
-  def validate_condition_topics?(condition)
-    topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
-    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
-  end
-
-  def jwt_token
-    scope = "https://www.googleapis.com/auth/firebase.messaging"
-    @authorizer ||= Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: json_key,
-      scope: scope,
-    )
-    token = @authorizer.fetch_access_token!
-    token["access_token"]
+  def deprecate_warning(method)
+    warn "[DEPRECATION] `FCM##{method} will be deprecated." \
+    "Please use `Fcm::Client.new(api_key).#{method}` instead."
   end
 
   def json_key
