@@ -49,7 +49,6 @@ class FCM
   # )
   def send_notification_v1(message, validate_only = false)
     return if @project_name.empty?
-
     post_body = { 'message': message, 'validate_only': validate_only }
     extra_headers = {
       'Authorization' => "Bearer #{jwt_token}"
