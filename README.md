@@ -7,7 +7,9 @@ Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/).
 
 ## Installation
 
-    $ gem install fcm
+```sh
+gem install fcm
+```
 
 or in your `Gemfile` just include it:
 
@@ -23,24 +25,26 @@ A version of supported Ruby, currently:
 `ruby >= 2.4`
 
 ## Getting Started
+
 To use this gem, you need to instantiate a client with your firebase credentials:
 
 ```ruby
 fcm = FCM.new(
-  API_TOKEN,
+  nil,
   GOOGLE_APPLICATION_CREDENTIALS_PATH,
   FIREBASE_PROJECT_ID
 )
 ```
 
 ## About the `GOOGLE_APPLICATION_CREDENTIALS_PATH`
-The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase credentials.
+
+The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase credentials. See the [Firebase V1 Migration docs](https://firebase.google.com/docs/cloud-messaging/migrate-v1#provide-credentials-manually) for instructions to create a private key file.
 
 The easiest way to provide them is to pass here an absolute path to a file with your credentials:
 
 ```ruby
 fcm = FCM.new(
-  API_TOKEN,
+  nil,
   '/path/to/credentials.json',
   FIREBASE_PROJECT_ID
 )
@@ -50,7 +54,7 @@ As per their secret nature, you might not want to have them in your repository. 
 
 ```ruby
 fcm = FCM.new(
-  API_TOKEN,
+  nil,
   StringIO.new(ENV.fetch('FIREBASE_CREDENTIALS')),
   FIREBASE_PROJECT_ID
 )
@@ -65,7 +69,7 @@ To migrate to HTTP v1 see: https://firebase.google.com/docs/cloud-messaging/migr
 
 ```ruby
 fcm = FCM.new(
-  API_TOKEN,
+  nil,
   GOOGLE_APPLICATION_CREDENTIALS_PATH,
   FIREBASE_PROJECT_ID
 )
@@ -246,6 +250,7 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 ## ChangeLog
 
 ### 1.0.8
+
 - caches calls to `Google::Auth::ServiceAccountCredentials` #103
 - Allow `faraday` versions from 1 up to 2  #101
 
@@ -278,7 +283,6 @@ Huge thanks to @excid3 @jsparling @jensljungblad
 
 - Fixed group messaging url.
 - Added API to `recover_notification_key`.
-
 
 ### 0.0.1
 
