@@ -17,9 +17,8 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
-  def initialize(json_key_path = "", project_name = "", http_options = {})
+  def initialize(json_key_path = "", http_options = {})
     @json_key_path = json_key_path
-    @project_name = project_name
     @http_options = http_options
     @keep_alive_connections = http_options.fetch(:keep_alive_connections, false)
     @keep_alive_idle_timeout_seconds =
@@ -33,7 +32,7 @@ class FCM
     require "faraday/net_http_persistent" if @keep_alive_connections
   end
 
-  # See https://firebase.google.com/docs/cloud-messaging/send-message
+  # See https://firebase.google.com/docs/cloud-messaging/send/v1-api
   # {
   #   "token": "4sdsx",
   #   "notification": {
@@ -57,17 +56,17 @@ class FCM
   #     }
   #   }
   # }
-  # fcm = FCM.new(json_key_path, project_name)
+  # fcm = FCM.new(json_key_path, firebase_project_id)
   # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    return if @project_name.empty?
+    return if firebase_project_id.empty?
 
     post_body = { message: message }
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", post_body.to_json
+        "#{firebase_project_id}/messages:send", post_body.to_json
       )
       build_response(response)
     end
@@ -182,11 +181,12 @@ class FCM
 
     body = { message: { topic: topic }.merge(options) }
 
-    for_uri(BASE_URI_V1) do |connection|
-      response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
-      )
-      build_response(response)
+      for_uri(BASE_URI_V1) do |connection|
+        response = connection.post(
+          "#{firebase_project_id}/messages:send", body.to_json
+        )
+        build_response(response)
+      end
     end
   end
 
@@ -195,11 +195,12 @@ class FCM
 
     body = { message: { condition: condition }.merge(options) }
 
-    for_uri(BASE_URI_V1) do |connection|
-      response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
-      )
-      build_response(response)
+      for_uri(BASE_URI_V1) do |connection|
+        response = connection.post(
+          "#{firebase_project_id}/messages:send", body.to_json
+        )
+        build_response(response)
+      end
     end
   end
 
@@ -387,5 +388,24 @@ class FCM
                   else
                     raise_credentials_error(@json_key_path)
                   end
+  end
+
+  def firebase_project_id
+    @firebase_project_id ||= extract_project_id
+  end
+
+  def extract_project_id
+    return "" if @json_key_path.nil? || @json_key_path == ""
+
+    json_content = if @json_key_path.respond_to?(:read)
+                     @json_key_path.read.tap { @json_key_path.rewind }
+                   else
+                     File.read(@json_key_path)
+                   end
+
+    credentials = JSON.parse(json_content)
+    credentials["project_id"] || ""
+  rescue JSON::ParserError, Errno::ENOENT => e
+    ""
   end
 end

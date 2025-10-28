@@ -4,9 +4,9 @@ require "spec_helper"
 require "tempfile"
 
 describe FCM do
-  let(:project_name) { "test-project" }
-  let(:json_key_path) { "path/to/json/key.json" }
-  let(:client) { described_class.new(json_key_path) }
+  let(:firebase_project_id) { 'test-project' }
+  let(:json_key_path) { 'path/to/json/key.json' }
+  let(:client) { FCM.new(json_key_path) }
 
   let(:mock_token) { "access_token" }
   let(:mock_headers) do
@@ -53,6 +53,7 @@ describe FCM do
 
   before do
     allow(client).to receive(:json_key)
+    allow(client).to receive(:extract_project_id).and_return(firebase_project_id)
 
     # Mock the Google::Auth::ServiceAccountCredentials
     allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds)
@@ -119,9 +120,9 @@ describe FCM do
   end
 
   describe "#send_v1 or #send_notification_v1" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+    let(:client) { described_class.new(json_key_path) }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
     let(:status_code) { 200 }
 
     let(:stub_fcm_send_v1_request) do
@@ -258,8 +259,8 @@ describe FCM do
       it_behaves_like "succesfuly send notification"
     end
 
-    context "when project_name is empty" do
-      let(:project_name) { "" }
+    context 'when firebase_project_id is empty' do
+      let(:firebase_project_id) { '' }
       let(:send_v1_params) do
         {
           "token" => "4sdsx",
@@ -330,9 +331,9 @@ describe FCM do
   end
 
   describe "#send_to_topic" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+    let(:client) { described_class.new(json_key_path) }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
 
     let(:topic) { "news" }
     let(:params) do
@@ -381,9 +382,9 @@ describe FCM do
   end
 
   describe "#send_to_topic_condition" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+    let(:client) { described_class.new(json_key_path) }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
 
     let(:topic_condition) { "'foo' in topics" }
     let(:params) do
