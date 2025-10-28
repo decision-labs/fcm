@@ -404,8 +404,8 @@ class FCM
                    end
 
     credentials = JSON.parse(json_content)
-    credentials["project_id"] || ''
-  rescue JSON::ParserError, Errno::ENOENT => e
+    credentials['project_id'] || ''
+  rescue JSON::ParserError, Errno::ENOENT
     ''
   end
 end
