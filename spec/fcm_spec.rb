@@ -53,7 +53,8 @@ describe FCM do
 
   before do
     allow(client).to receive(:json_key)
-    allow(client).to receive(:extract_project_id).and_return(firebase_project_id)
+    allow(client).to receive(:extract_project_id).
+      and_return(firebase_project_id)
 
     # Mock the Google::Auth::ServiceAccountCredentials
     allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds)

@@ -17,7 +17,7 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
-  def initialize(json_key_path = "", http_options = {})
+  def initialize(json_key_path = '', http_options = {})
     @json_key_path = json_key_path
     @http_options = http_options
     @keep_alive_connections = http_options.fetch(:keep_alive_connections, false)
@@ -56,7 +56,7 @@ class FCM
   #     }
   #   }
   # }
-  # fcm = FCM.new(json_key_path, firebase_project_id)
+  # fcm = FCM.new(json_key_path)
   # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
@@ -395,7 +395,7 @@ class FCM
   end
 
   def extract_project_id
-    return "" if @json_key_path.nil? || @json_key_path == ""
+    return '' if @json_key_path.nil? || @json_key_path == ''
 
     json_content = if @json_key_path.respond_to?(:read)
                      @json_key_path.read.tap { @json_key_path.rewind }
@@ -404,8 +404,8 @@ class FCM
                    end
 
     credentials = JSON.parse(json_content)
-    credentials["project_id"] || ""
+    credentials["project_id"] || ''
   rescue JSON::ParserError, Errno::ENOENT => e
-    ""
+    ''
   end
 end
