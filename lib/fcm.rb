@@ -293,7 +293,7 @@ class FCM
     token["access_token"]
   end
 
-  def credentials_error_msg(param)
+  def raise_credentials_error(param)
     error_msg = 'credentials must be an IO-like ' \
       'object or path. You passed'
 
@@ -317,7 +317,7 @@ class FCM
                   elsif valid_json_key_path?(@json_key_path)
                     File.open(@json_key_path)
                   else
-                    credentials_error_msg(@json_key_path)
+                    raise_credentials_error(@json_key_path)
                   end
   end
 end
