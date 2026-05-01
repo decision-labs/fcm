@@ -1,4 +1,5 @@
 require "spec_helper"
+require 'tempfile'
 
 describe FCM do
   let(:project_name) { 'test-project' }
@@ -13,27 +14,105 @@ describe FCM do
     }
   end
 
+  let(:client_email) do
+    '83315528762cf7e0-7bbcc3aad87e0083391bc7f234d487' \
+    'c8@developer.gserviceaccount.com'
+  end
+
+  let(:client_x509_cert_url) do
+    'https://www.googleapis.com/robot/v1/metadata/x509/' \
+    'fd6b61037dd2bb8585527679" + "-7bbcc3aad87e0083391b' \
+    'c7f234d487c8%40developer.gserviceaccount.com'
+  end
+
+  let(:large_file_name) do
+    Array.new(1021) { 'a' }.join('') + '.txt'
+  end
+
+  let(:creds_error) do
+    FCM::InvalidCredentialError
+  end
+
+  let(:json_credentials) do
+    {
+      "type": 'service_account',
+      "project_id": 'example',
+      "private_key_id": 'c09c4593eee53707ca9f4208fbd6fe72b29fc7ab',
+      "private_key": OpenSSL::PKey::RSA.new(2048).to_s,
+      "client_email": client_email,
+      "client_id": 'acedc3c0a63b3562376386f0.apps.googleusercontent.com',
+      "auth_uri": 'https://accounts.google.com/o/oauth2/auth',
+      "token_uri": 'https://oauth2.googleapis.com/token',
+      "auth_provider_x509_cert_url": 'https://www.googleapis.com/oauth2/v1/certs',
+      "client_x509_cert_url": client_x509_cert_url,
+      "universe_domain": 'googleapis.com'
+    }.to_json
+  end
+
   before do
     allow(client).to receive(:json_key)
 
     # Mock the Google::Auth::ServiceAccountCredentials
-    allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds).
-      and_return(double(fetch_access_token!: { 'access_token' => mock_token }))
+    allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds)
+      .and_return(double(fetch_access_token!: { 'access_token' => mock_token }))
   end
 
-  it "should initialize" do
+  it 'should initialize' do
     expect { client }.not_to raise_error
   end
 
   describe "credentials path" do
-    it "can be a path to a file" do
+    it 'can be a path to a file' do
       fcm = FCM.new("README.md")
       expect(fcm.__send__(:json_key).class).to eq(File)
     end
 
-    it "can be an IO object" do
-      fcm = FCM.new(StringIO.new("hey"))
+    it 'raises an error when passed a large path' do
+      expect do
+        FCM.new(large_file_name).__send__(:json_key)
+      end.to raise_error(creds_error)
+    end
+
+    it 'can be an IO object' do
+      fcm = FCM.new(StringIO.new('hey'))
       expect(fcm.__send__(:json_key).class).to eq(StringIO)
+
+      temp_file = Tempfile.new('hello_world.json')
+      temp_file.write(json_credentials)
+      fcm_with_temp_file = FCM.new(temp_file)
+
+      expect do
+        fcm_with_temp_file
+      end.not_to raise_error
+      temp_file.close
+      temp_file.unlink
+    end
+
+    it 'raises an error when passed a non IO-like object' do
+      expect do
+        FCM.new(nil, '', {}).__send__(:json_key)
+      end.to raise_error(creds_error, 'credentials must be' \
+      ' an IO-like object or path. You passed nil.')
+
+      expect do
+        FCM.new(json_credentials, '', {}).__send__(:json_key)
+      end.to raise_error(creds_error, 'credentials must be' \
+      ' an IO-like object or path. You passed a String.')
+
+      expect do
+        FCM.new({}, '', {}).__send__(:json_key)
+      end.to raise_error(creds_error, 'credentials must be' \
+      ' an IO-like object or path. You passed a Hash.')
+    end
+
+    it 'raises an error when passed a non-existent credentials file path' do
+      fcm = FCM.new('spec/fake_credentials.json', '', {})
+      expect { fcm.__send__(:json_key) }.to raise_error(creds_error)
+    end
+
+    it 'raises an error when passed a string of a file that does not exist' do
+      fcm = FCM.new('example.txt', '', {})
+      expect { fcm.__send__(:json_key) }.to raise_error(creds_error)
     end
   end
 

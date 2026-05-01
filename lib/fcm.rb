@@ -4,6 +4,8 @@ require "json"
 require "googleauth"
 
 class FCM
+  class InvalidCredentialError < StandardError; end
+
   BASE_URI = "https://fcm.googleapis.com"
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
   DEFAULT_TIMEOUT = 30
@@ -291,11 +293,31 @@ class FCM
     token["access_token"]
   end
 
+  def raise_credentials_error(param)
+    error_msg = 'credentials must be an IO-like ' \
+      'object or path. You passed'
+
+    param_klass = param.nil? ? 'nil' : "a #{param.class.name}"
+    error_msg += " #{param_klass}."
+    raise InvalidCredentialError, error_msg
+  end
+
+  def valid_json_key_path?(path)
+    valid_io_object = path.respond_to?(:open)
+    return true if valid_io_object && File.file?(path)
+
+    max_path_len = 1024
+    valid_path = path.is_a?(String) && path.length <= max_path_len
+    valid_path && File.file?(path)
+  end
+
   def json_key
     @json_key ||= if @json_key_path.respond_to?(:read)
                     @json_key_path
-                  else
+                  elsif valid_json_key_path?(@json_key_path)
                     File.open(@json_key_path)
+                  else
+                    raise_credentials_error(@json_key_path)
                   end
   end
 end
