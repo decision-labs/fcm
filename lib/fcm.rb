@@ -9,6 +9,8 @@ class FCM
   BASE_URI = "https://fcm.googleapis.com"
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
   DEFAULT_TIMEOUT = 30
+  DEFAULT_KEEP_ALIVE_IDLE_TIMEOUT_SECONDS = 30
+  DEFAULT_KEEP_ALIVE_POOL_SIZE = 1
 
   GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
   INSTANCE_ID_API = "https://iid.googleapis.com"
@@ -18,6 +20,16 @@ class FCM
     @json_key_path = json_key_path
     @project_name = project_name
     @http_options = http_options
+    @keep_alive_connections = http_options.fetch(:keep_alive_connections, false)
+    @keep_alive_idle_timeout_seconds =
+      http_options.fetch(:keep_alive_idle_timeout_seconds, DEFAULT_KEEP_ALIVE_IDLE_TIMEOUT_SECONDS)
+    @keep_alive_pool_size = http_options.fetch(:keep_alive_pool_size, DEFAULT_KEEP_ALIVE_POOL_SIZE)
+
+    # Per-instance key for the thread-local connection cache so multiple FCM
+    # clients in the same process do not share sockets.
+    @thread_connections_key = :"_fcm_connections_#{object_id}"
+
+    require "faraday/net_http_persistent" if @keep_alive_connections
   end
 
   # See https://firebase.google.com/docs/cloud-messaging/send-message
@@ -193,19 +205,72 @@ class FCM
   private
 
   def for_uri(uri, extra_headers = {})
-    connection = ::Faraday.new(
+    if @keep_alive_connections
+      with_persistent_connection(uri, extra_headers) { |connection| yield connection }
+    else
+      yield build_one_shot_connection(uri, extra_headers)
+    end
+  end
+
+  def build_one_shot_connection(uri, extra_headers)
+    ::Faraday.new(
       url: uri,
       request: { timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT) }
     ) do |faraday|
       faraday.adapter Faraday.default_adapter
-      faraday.headers["Content-Type"] = "application/json"
-      faraday.headers["Authorization"] = "Bearer #{jwt_token}"
-      faraday.headers["access_token_auth"]= "true"
-      extra_headers.each do |key, value|
-        faraday.headers[key] = value
+      apply_default_headers(faraday, extra_headers)
+    end
+  end
+
+  # Reuses a thread-local Faraday connection (one per uri) backed by
+  # net-http-persistent so the TCP/TLS handshake and HTTP/2 stream are
+  # amortised across requests. Bearer tokens and per-call headers are
+  # re-applied each yield because JWTs expire and extra_headers vary.
+  # On error, the cached connection is dropped: the underlying socket may
+  # be half-closed and reusing it would just fail again.
+  def with_persistent_connection(uri, extra_headers)
+    connection = persistent_connection_for(uri)
+    apply_default_headers(connection, extra_headers)
+    yield connection
+  rescue StandardError
+    discard_persistent_connection(uri)
+    raise
+  end
+
+  def apply_default_headers(connection, extra_headers)
+    connection.headers["Content-Type"] = "application/json"
+    connection.headers["Authorization"] = "Bearer #{jwt_token}"
+    connection.headers["access_token_auth"] = "true"
+    extra_headers.each { |key, value| connection.headers[key] = value }
+  end
+
+  # Net::HTTP is not thread-safe, so connections are cached per (thread, uri)
+  # rather than shared across threads.
+  def persistent_connection_for(uri)
+    thread_connections[uri] ||= build_persistent_connection(uri)
+  end
+
+  def discard_persistent_connection(uri)
+    connection = thread_connections.delete(uri)
+    connection.close if connection.respond_to?(:close)
+  end
+
+  def thread_connections
+    Thread.current[@thread_connections_key] ||= {}
+  end
+
+  def build_persistent_connection(uri)
+    ::Faraday.new(
+      url: uri,
+      request: { timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT) }
+    ) do |faraday|
+      # pool_size defaults to 1: we already cache one Faraday connection per
+      # (thread, uri), and Net::HTTP is not thread-safe — so a single socket
+      # per pool is the safe default. Override only with a specific reason.
+      faraday.adapter :net_http_persistent, pool_size: @keep_alive_pool_size do |http|
+        http.idle_timeout = @keep_alive_idle_timeout_seconds
       end
     end
-    yield connection
   end
 
   def build_post_body(registration_ids, options = {})
