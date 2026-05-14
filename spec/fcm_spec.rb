@@ -517,16 +517,16 @@ describe FCM do
     end
   end
 
-  describe 'keep_alive_connections' do
-    let(:client) { FCM.new(json_key_path, project_name, keep_alive_connections: true) }
+  describe "keep_alive_connections" do
+    let(:client) { described_class.new(json_key_path, project_name, keep_alive_connections: true) }
     let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
-    let(:send_v1_params) { { 'token' => 'token', 'notification' => { 'title' => 'hi' } } }
+    let(:send_v1_params) { { "token" => "token", "notification" => { "title" => "hi" } } }
 
     before do
-      stub_request(:post, uri).to_return(body: '{}', headers: {}, status: 200)
+      stub_request(:post, uri).to_return(body: "{}", headers: {}, status: 200)
     end
 
-    it 'caches a Faraday connection per (thread, uri) and reuses it across calls' do
+    it "caches a Faraday connection per (thread, uri) and reuses it across calls" do
       client.send_v1(send_v1_params)
       first = client.__send__(:thread_connections)[FCM::BASE_URI_V1]
 
@@ -537,18 +537,18 @@ describe FCM do
       expect(second).to equal(first)
     end
 
-    it 'discards the cached connection when a request raises' do
+    it "discards the cached connection when a request raises" do
       client.send_v1(send_v1_params)
       expect(client.__send__(:thread_connections)[FCM::BASE_URI_V1]).to be_a(Faraday::Connection)
 
-      stub_request(:post, uri).to_raise(Faraday::ConnectionFailed.new('boom'))
+      stub_request(:post, uri).to_raise(Faraday::ConnectionFailed.new("boom"))
 
       expect { client.send_v1(send_v1_params) }.to raise_error(Faraday::ConnectionFailed)
       expect(client.__send__(:thread_connections)).not_to have_key(FCM::BASE_URI_V1)
     end
 
-    it 'does not share connections across FCM instances' do
-      other_client = FCM.new(json_key_path, project_name, keep_alive_connections: true)
+    it "does not share connections across FCM instances" do
+      other_client = described_class.new(json_key_path, project_name, keep_alive_connections: true)
       allow(other_client).to receive(:json_key)
 
       client.send_v1(send_v1_params)
@@ -558,8 +558,8 @@ describe FCM do
         .not_to equal(other_client.__send__(:thread_connections)[FCM::BASE_URI_V1])
     end
 
-    it 'falls back to one-shot connections when disabled' do
-      one_shot_client = FCM.new(json_key_path, project_name)
+    it "falls back to one-shot connections when disabled" do
+      one_shot_client = described_class.new(json_key_path, project_name)
       allow(one_shot_client).to receive(:json_key)
       one_shot_client.send_v1(send_v1_params)
 

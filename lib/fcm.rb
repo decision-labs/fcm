@@ -206,9 +206,9 @@ class FCM
 
   private
 
-  def for_uri(uri, extra_headers = {})
+  def for_uri(uri, extra_headers = {}, &block)
     if @keep_alive_connections
-      with_persistent_connection(uri, extra_headers) { |connection| yield connection }
+      with_persistent_connection(uri, extra_headers, &block)
     else
       yield build_one_shot_connection(uri, extra_headers)
     end
