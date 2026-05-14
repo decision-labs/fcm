@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "faraday"
 require "json"
 require "googleauth"
@@ -11,7 +13,7 @@ class FCM
 
   GROUP_NOTIFICATION_BASE_URI = "https://android.googleapis.com"
   INSTANCE_ID_API = "https://iid.googleapis.com"
-  TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/
+  TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
   def initialize(json_key_path = "", project_name = "", http_options = {})
     @json_key_path = json_key_path
@@ -50,7 +52,7 @@ class FCM
   def send_notification_v1(message)
     return if @project_name.empty?
 
-    post_body = { 'message': message }
+    post_body = { message: message }
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
         "#{@project_name}/messages:send", post_body.to_json
@@ -66,7 +68,7 @@ class FCM
                                                   notification_key_name: key_name)
 
     extra_headers = {
-      "project_id" => project_id,
+      "project_id" => project_id
     }
 
     for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
@@ -83,7 +85,7 @@ class FCM
                                                   notification_key: notification_key)
 
     extra_headers = {
-      "project_id" => project_id,
+      "project_id" => project_id
     }
 
     for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
@@ -100,7 +102,7 @@ class FCM
                                                   notification_key: notification_key)
 
     extra_headers = {
-      "project_id" => project_id,
+      "project_id" => project_id
     }
 
     for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
@@ -115,7 +117,7 @@ class FCM
     params = { notification_key_name: key_name }
 
     extra_headers = {
-      "project_id" => project_id,
+      "project_id" => project_id
     }
 
     for_uri(GROUP_NOTIFICATION_BASE_URI, extra_headers) do |connection|
@@ -138,11 +140,11 @@ class FCM
   end
 
   def batch_topic_subscription(topic, registration_tokens)
-    manage_topics_relationship(topic, registration_tokens, 'Add')
+    manage_topics_relationship(topic, registration_tokens, "Add")
   end
 
   def batch_topic_unsubscription(topic, registration_tokens)
-    manage_topics_relationship(topic, registration_tokens, 'Remove')
+    manage_topics_relationship(topic, registration_tokens, "Remove")
   end
 
   def manage_topics_relationship(topic, registration_tokens, action)
@@ -164,28 +166,28 @@ class FCM
   end
 
   def send_to_topic(topic, options = {})
-    if topic.gsub(TOPIC_REGEX, '').length.zero?
-      body = { 'message': { 'topic': topic }.merge(options) }
+    return unless topic.gsub(TOPIC_REGEX, "").empty?
 
-      for_uri(BASE_URI_V1) do |connection|
-        response = connection.post(
-          "#{@project_name}/messages:send", body.to_json
-        )
-        build_response(response)
-      end
+    body = { message: { topic: topic }.merge(options) }
+
+    for_uri(BASE_URI_V1) do |connection|
+      response = connection.post(
+        "#{@project_name}/messages:send", body.to_json
+      )
+      build_response(response)
     end
   end
 
   def send_to_topic_condition(condition, options = {})
-    if validate_condition?(condition)
-      body = { 'message': { 'condition': condition }.merge(options) }
+    return unless validate_condition?(condition)
 
-      for_uri(BASE_URI_V1) do |connection|
-        response = connection.post(
-          "#{@project_name}/messages:send", body.to_json
-        )
-        build_response(response)
-      end
+    body = { message: { condition: condition }.merge(options) }
+
+    for_uri(BASE_URI_V1) do |connection|
+      response = connection.post(
+        "#{@project_name}/messages:send", body.to_json
+      )
+      build_response(response)
     end
   end
 
@@ -199,7 +201,7 @@ class FCM
       faraday.adapter Faraday.default_adapter
       faraday.headers["Content-Type"] = "application/json"
       faraday.headers["Authorization"] = "Bearer #{jwt_token}"
-      faraday.headers["access_token_auth"]= "true"
+      faraday.headers["access_token_auth"] = "true"
       extra_headers.each do |key, value|
         faraday.headers[key] = value
       end
@@ -220,9 +222,14 @@ class FCM
       response_hash[:response] = "success"
       body = JSON.parse(body) unless body.empty?
       response_hash[:canonical_ids] = build_canonical_ids(body, registration_ids) unless registration_ids.empty?
-      response_hash[:not_registered_ids] = build_not_registered_ids(body, registration_ids) unless registration_ids.empty?
+      unless registration_ids.empty?
+        response_hash[:not_registered_ids] =
+          build_not_registered_ids(body, registration_ids)
+      end
     when 400
-      response_hash[:response] = "Only applies for JSON requests. Indicates that the request could not be parsed as JSON, or it contained invalid fields."
+      response_hash[:response] =
+        "Only applies for JSON requests. Indicates that the request could not be parsed as JSON, " \
+        "or it contained invalid fields."
     when 401
       response_hash[:response] = "There was an error authenticating the sender account."
     when 503
@@ -235,11 +242,9 @@ class FCM
 
   def build_canonical_ids(body, registration_ids)
     canonical_ids = []
-    unless body.empty?
-      if body["canonical_ids"] > 0
-        body["results"].each_with_index do |result, index|
-          canonical_ids << { old: registration_ids[index], new: result["registration_id"] } if has_canonical_id?(result)
-        end
+    if !body.empty? && body["canonical_ids"].positive?
+      body["results"].each_with_index do |result, index|
+        canonical_ids << { old: registration_ids[index], new: result["registration_id"] } if has_canonical_id?(result)
       end
     end
     canonical_ids
@@ -247,11 +252,9 @@ class FCM
 
   def build_not_registered_ids(body, registration_id)
     not_registered_ids = []
-    unless body.empty?
-      if body["failure"] > 0
-        body["results"].each_with_index do |result, index|
-          not_registered_ids << registration_id[index] if is_not_registered?(result)
-        end
+    if !body.empty? && body["failure"].positive?
+      body["results"].each_with_index do |result, index|
+        not_registered_ids << registration_id[index] if is_not_registered?(result)
       end
     end
     not_registered_ids
@@ -271,32 +274,32 @@ class FCM
 
   def validate_condition_format?(condition)
     bad_characters = condition.gsub(
-      /(topics|in|\s|\(|\)|(&&)|[!]|(\|\|)|'([a-zA-Z0-9\-_.~%]+)')/,
+      /(topics|in|\s|\(|\)|(&&)|!|(\|\|)|'([a-zA-Z0-9\-_.~%]+)')/,
       ""
     )
-    bad_characters.length == 0
+    bad_characters.empty?
   end
 
   def validate_condition_topics?(condition)
     topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
-    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").length == 0 }
+    topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").empty? }
   end
 
   def jwt_token
     scope = "https://www.googleapis.com/auth/firebase.messaging"
     @authorizer ||= Google::Auth::ServiceAccountCredentials.make_creds(
       json_key_io: json_key,
-      scope: scope,
+      scope: scope
     )
     token = @authorizer.fetch_access_token!
     token["access_token"]
   end
 
   def raise_credentials_error(param)
-    error_msg = 'credentials must be an IO-like ' \
-      'object or path. You passed'
+    error_msg = "credentials must be an IO-like " \
+                "object or path. You passed"
 
-    param_klass = param.nil? ? 'nil' : "a #{param.class.name}"
+    param_klass = param.nil? ? "nil" : "a #{param.class.name}"
     error_msg += " #{param_klass}."
     raise InvalidCredentialError, error_msg
   end
