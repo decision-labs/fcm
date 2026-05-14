@@ -1,0 +1,67 @@
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 2.7
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - "tmp/**/*"
+
+# This is a small gem; some style cops add noise without value.
+Style/Documentation:
+  Enabled: false
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Renaming `is_not_registered?` / `has_canonical_id?` would change the gem's
+# (admittedly internal) Ruby surface area. Out of scope for a lint pass.
+Naming/PredicatePrefix:
+  Enabled: false
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - "fcm.gemspec"
+
+# Out of scope for a lint pass: bumping required_ruby_version is a semver-relevant
+# change for gem consumers and should be considered separately.
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+# Enabling MFA is a publishing-policy decision for the gem maintainer, not
+# something a lint pass should silently introduce.
+Gemspec/RequireMFA:
+  Enabled: false
+
+# Code metrics are coarse signals that fight a lot of legacy code.
+Metrics/AbcSize:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "fcm.gemspec"
+
+# Specs are intentionally long, descriptive, and use `.should` syntax in
+# places — none of these add value here.
+RSpec/ExampleLength:
+  Enabled: false
+RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+RSpec/NestedGroups:
+  Enabled: false
+RSpec/NoExpectationExample:
+  Enabled: false
