@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "faraday"
-require "cgi"
 require "json"
 require "googleauth"
 

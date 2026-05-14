@@ -4,7 +4,6 @@ source "https://rubygems.org"
 gemspec
 
 gem "ci_reporter_rspec"
-gem "googleauth"
 gem "rake"
 gem "rspec"
 gem "rubocop", require: false
