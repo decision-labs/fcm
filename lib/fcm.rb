@@ -199,7 +199,7 @@ class FCM
       url: uri,
       request: {
         timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT),
-        open_timeout: @http_options.fetch(:open_timeout, DEFAULT_TIMEOUT),
+        open_timeout: @http_options.fetch(:open_timeout, DEFAULT_TIMEOUT)
       }
     ) do |faraday|
       faraday.adapter Faraday.default_adapter

@@ -517,9 +517,9 @@ describe FCM do
     end
   end
 
-  describe 'request timeouts' do
-    it 'defaults timeout and open_timeout to DEFAULT_TIMEOUT' do
-      fcm = FCM.new(json_key_path, project_name)
+  describe "request timeouts" do
+    it "defaults timeout and open_timeout to DEFAULT_TIMEOUT" do
+      fcm = described_class.new(json_key_path, project_name)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
@@ -528,8 +528,8 @@ describe FCM do
       end
     end
 
-    it 'honours :timeout and :open_timeout from http_options' do
-      fcm = FCM.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
+    it "honours :timeout and :open_timeout from http_options" do
+      fcm = described_class.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
