@@ -516,4 +516,26 @@ describe FCM do
       end
     end
   end
+
+  describe "request timeouts" do
+    it "defaults timeout and open_timeout to DEFAULT_TIMEOUT" do
+      fcm = described_class.new(json_key_path, project_name)
+      allow(fcm).to receive(:json_key)
+
+      fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
+        expect(conn.options.timeout).to eq(FCM::DEFAULT_TIMEOUT)
+        expect(conn.options.open_timeout).to eq(FCM::DEFAULT_TIMEOUT)
+      end
+    end
+
+    it "honours :timeout and :open_timeout from http_options" do
+      fcm = described_class.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
+      allow(fcm).to receive(:json_key)
+
+      fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
+        expect(conn.options.timeout).to eq(7)
+        expect(conn.options.open_timeout).to eq(3)
+      end
+    end
+  end
 end

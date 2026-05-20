@@ -54,6 +54,20 @@ fcm = FCM.new(
 
 ```
 
+## Request timeouts
+
+Both the read timeout and the TCP connect timeout are configurable via
+`http_options`. Both default to `DEFAULT_TIMEOUT` (30s):
+
+```ruby
+fcm = FCM.new(
+  GOOGLE_APPLICATION_CREDENTIALS_PATH,
+  FIREBASE_PROJECT_ID,
+  timeout: 10,      # response read timeout
+  open_timeout: 5   # TCP connect timeout — fail fast on stuck handshakes
+)
+```
+
 ## Usage
 
 ## HTTP v1 API
