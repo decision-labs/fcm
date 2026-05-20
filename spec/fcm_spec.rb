@@ -118,6 +118,17 @@ describe FCM do
     end
   end
 
+  describe 'faraday configurer' do
+    let(:configurer) { ->(faraday) { } }
+    let(:client) { FCM.new(json_key_path, '', {}, configurer) }
+
+    it 'should be called when initializing faraday client' do
+      expect(configurer).to receive(:call).with(Faraday::Connection)
+
+      client.__send__(:for_uri, '') {}
+    end
+  end
+
   describe "#send_v1 or #send_notification_v1" do
     let(:client) { described_class.new(json_key_path, project_name) }
 
