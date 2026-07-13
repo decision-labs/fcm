@@ -17,6 +17,21 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
+  # Service account credentials file schema (JSON format):
+  # {
+  #   "type": "service_account",
+  #   "project_id": "your-project-id",
+  #   "private_key_id": "key-id",
+  #   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  #   "client_email": "firebase-adminsdk@your-project-id.iam.gserviceaccount.com",
+  #   "client_id": "client-id",
+  #   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  #   "token_uri": "https://oauth2.googleapis.com/token",
+  #   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  #   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk%40your-project-id.iam.gserviceaccount.com",
+  #   "universe_domain": "googleapis.com"
+  # }
+  # The project_id field is automatically extracted from this file for FCM API calls.
   def initialize(json_key_path = '', http_options = {})
     @json_key_path = json_key_path
     @http_options = http_options
