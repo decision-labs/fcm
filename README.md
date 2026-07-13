@@ -31,6 +31,14 @@ fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH)
 
 **Note:** The Firebase project ID is automatically extracted from your Firebase service credentials file.
 
+Passing the project name explicitly is still supported for backwards compatibility, but deprecated:
+
+```ruby
+fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH, FIREBASE_PROJECT_ID) # deprecated
+```
+
+When provided, the explicit project name takes precedence over the `project_id` from the credentials file. This argument will be removed in a future major release.
+
 ## About the `GOOGLE_APPLICATION_CREDENTIALS_PATH`
 The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase credentials.
 

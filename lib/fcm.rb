@@ -32,8 +32,13 @@ class FCM
   #   "universe_domain": "googleapis.com"
   # }
   # The project_id field is automatically extracted from this file for FCM API calls.
-  def initialize(json_key_path = '', http_options = {})
+  #
+  # The project_name argument is deprecated: when omitted, the project id is
+  # read from the credentials file. An explicitly passed value still takes
+  # precedence, so existing callers keep their current behaviour.
+  def initialize(json_key_path = '', project_name = '', http_options = {})
     @json_key_path = json_key_path
+    @project_name = project_name
     @http_options = http_options
     @keep_alive_connections = http_options.fetch(:keep_alive_connections, false)
     @keep_alive_idle_timeout_seconds =
@@ -45,6 +50,12 @@ class FCM
     @thread_connections_key = :"_fcm_connections_#{object_id}"
 
     require "faraday/net_http_persistent" if @keep_alive_connections
+
+    return if project_name.to_s.empty?
+
+    warn '[DEPRECATION] Passing `project_name` to FCM.new is deprecated and ' \
+         'will be removed in a future release. The project id is now read ' \
+         'from the service account credentials file.'
   end
 
   # See https://firebase.google.com/docs/cloud-messaging/send/v1-api
@@ -406,7 +417,11 @@ class FCM
   end
 
   def firebase_project_id
-    @firebase_project_id ||= extract_project_id
+    @firebase_project_id ||= if @project_name.to_s.empty?
+                               extract_project_id
+                             else
+                               @project_name
+                             end
   end
 
   def extract_project_id

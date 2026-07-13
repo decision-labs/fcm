@@ -120,6 +120,46 @@ describe FCM do
     end
   end
 
+  describe "deprecated project_name argument" do
+    let(:project_name) { 'explicit-project' }
+
+    it "prefers the explicitly passed project name over the credentials file" do
+      client = silence_warnings { FCM.new(json_key_path, project_name) }
+      expect(client).not_to receive(:extract_project_id)
+      expect(client.__send__(:firebase_project_id)).to eq(project_name)
+    end
+
+    it "keeps accepting http_options as the third argument" do
+      client = silence_warnings { FCM.new(json_key_path, project_name, timeout: 10) }
+      expect(client.instance_variable_get(:@http_options)).to eq(timeout: 10)
+    end
+
+    it "emits a deprecation warning when project_name is passed" do
+      expect { FCM.new(json_key_path, project_name) }
+        .to output(/DEPRECATION.*project_name/).to_stderr
+    end
+
+    it "does not warn when project_name is omitted" do
+      expect { FCM.new(json_key_path) }.not_to output.to_stderr
+    end
+
+    def silence_warnings
+      original_stderr = $stderr
+      $stderr = StringIO.new
+      yield
+    ensure
+      $stderr = original_stderr
+    end
+  end
+
+  describe "firebase project id extraction" do
+    it "reads project_id from an IO credentials object when project_name is omitted" do
+      credentials = StringIO.new({ project_id: 'io-project' }.to_json)
+      fcm = FCM.new(credentials)
+      expect(fcm.__send__(:firebase_project_id)).to eq('io-project')
+    end
+  end
+
   describe "#send_v1 or #send_notification_v1" do
     let(:client) { described_class.new(json_key_path) }
 
