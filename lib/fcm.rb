@@ -33,10 +33,12 @@ class FCM
   # }
   # The project_id field is automatically extracted from this file for FCM API calls.
   #
-  # The project_name argument is deprecated: when omitted, the project id is
-  # read from the credentials file. An explicitly passed value still takes
-  # precedence, so existing callers keep their current behaviour.
   def initialize(json_key_path = '', project_name = '', http_options = {})
+    if project_name.is_a?(Hash) && http_options.empty?
+      http_options = project_name
+      project_name = ''
+    end
+
     @json_key_path = json_key_path
     @project_name = project_name
     @http_options = http_options

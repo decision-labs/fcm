@@ -145,6 +145,16 @@ describe FCM do
       expect { FCM.new(json_key_path) }.not_to output.to_stderr
     end
 
+    it 'treats a Hash in the project_name position as http_options' do
+      client = FCM.new(json_key_path, timeout: 7)
+      expect(client.instance_variable_get(:@http_options)).to eq(timeout: 7)
+      expect(client.instance_variable_get(:@project_name)).to eq('')
+    end
+
+    it 'does not warn when a Hash is passed in the project_name position' do
+      expect { FCM.new(json_key_path, timeout: 7) }.not_to output.to_stderr
+    end
+
     def silence_warnings
       original_stderr = $stderr
       $stderr = StringIO.new
@@ -613,7 +623,7 @@ describe FCM do
 
   describe "request timeouts" do
     it "defaults timeout and open_timeout to DEFAULT_TIMEOUT" do
-      fcm = described_class.new(json_key_path, project_name)
+      fcm = described_class.new(json_key_path)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
@@ -623,7 +633,7 @@ describe FCM do
     end
 
     it "honours :timeout and :open_timeout from http_options" do
-      fcm = described_class.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
+      fcm = described_class.new(json_key_path, timeout: 7, open_timeout: 3)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
