@@ -214,10 +214,7 @@ class FCM
   end
 
   def build_one_shot_connection(uri, extra_headers)
-    ::Faraday.new(
-      url: uri,
-      request: { timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT) }
-    ) do |faraday|
+    ::Faraday.new(url: uri, request: request_options) do |faraday|
       faraday.adapter Faraday.default_adapter
       apply_default_headers(faraday, extra_headers)
     end
@@ -260,11 +257,15 @@ class FCM
     Thread.current[@thread_connections_key] ||= {}
   end
 
+  def request_options
+    {
+      timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT),
+      open_timeout: @http_options.fetch(:open_timeout, DEFAULT_TIMEOUT)
+    }
+  end
+
   def build_persistent_connection(uri)
-    ::Faraday.new(
-      url: uri,
-      request: { timeout: @http_options.fetch(:timeout, DEFAULT_TIMEOUT) }
-    ) do |faraday|
+    ::Faraday.new(url: uri, request: request_options) do |faraday|
       # pool_size defaults to 1: we already cache one Faraday connection per
       # (thread, uri), and Net::HTTP is not thread-safe — so a single socket
       # per pool is the safe default. Override only with a specific reason.
