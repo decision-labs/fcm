@@ -517,6 +517,56 @@ describe FCM do
     end
   end
 
+  describe "keep_alive_connections" do
+    let(:client) { described_class.new(json_key_path, project_name, keep_alive_connections: true) }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:send_v1_params) { { "token" => "token", "notification" => { "title" => "hi" } } }
+
+    before do
+      stub_request(:post, uri).to_return(body: "{}", headers: {}, status: 200)
+    end
+
+    it "caches a Faraday connection per (thread, uri) and reuses it across calls" do
+      client.send_v1(send_v1_params)
+      first = client.__send__(:thread_connections)[FCM::BASE_URI_V1]
+
+      client.send_v1(send_v1_params)
+      second = client.__send__(:thread_connections)[FCM::BASE_URI_V1]
+
+      expect(first).to be_a(Faraday::Connection)
+      expect(second).to equal(first)
+    end
+
+    it "discards the cached connection when a request raises" do
+      client.send_v1(send_v1_params)
+      expect(client.__send__(:thread_connections)[FCM::BASE_URI_V1]).to be_a(Faraday::Connection)
+
+      stub_request(:post, uri).to_raise(Faraday::ConnectionFailed.new("boom"))
+
+      expect { client.send_v1(send_v1_params) }.to raise_error(Faraday::ConnectionFailed)
+      expect(client.__send__(:thread_connections)).not_to have_key(FCM::BASE_URI_V1)
+    end
+
+    it "does not share connections across FCM instances" do
+      other_client = described_class.new(json_key_path, project_name, keep_alive_connections: true)
+      allow(other_client).to receive(:json_key)
+
+      client.send_v1(send_v1_params)
+      other_client.send_v1(send_v1_params)
+
+      expect(client.__send__(:thread_connections)[FCM::BASE_URI_V1])
+        .not_to equal(other_client.__send__(:thread_connections)[FCM::BASE_URI_V1])
+    end
+
+    it "falls back to one-shot connections when disabled" do
+      one_shot_client = described_class.new(json_key_path, project_name)
+      allow(one_shot_client).to receive(:json_key)
+      one_shot_client.send_v1(send_v1_params)
+
+      expect(one_shot_client.__send__(:thread_connections)).to be_empty
+    end
+  end
+
   describe "request timeouts" do
     it "defaults timeout and open_timeout to DEFAULT_TIMEOUT" do
       fcm = described_class.new(json_key_path, project_name)
@@ -530,6 +580,18 @@ describe FCM do
 
     it "honours :timeout and :open_timeout from http_options" do
       fcm = described_class.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
+      allow(fcm).to receive(:json_key)
+
+      fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
+        expect(conn.options.timeout).to eq(7)
+        expect(conn.options.open_timeout).to eq(3)
+      end
+    end
+
+    it "honours :timeout and :open_timeout on keep-alive connections" do
+      fcm = described_class.new(
+        json_key_path, project_name, keep_alive_connections: true, timeout: 7, open_timeout: 3
+      )
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|

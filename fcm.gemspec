@@ -20,5 +20,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency("faraday", ">= 1.0.0", "< 3.0")
+  s.add_dependency("faraday-net_http_persistent", "~> 2.0")
   s.add_dependency("googleauth", "~> 1")
+  s.add_dependency("net-http-persistent", "~> 4.0")
 end

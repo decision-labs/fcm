@@ -68,6 +68,25 @@ fcm = FCM.new(
 )
 ```
 
+## HTTP keep-alive
+
+By default each request opens a fresh TCP/TLS connection to FCM. For high-volume
+senders this dominates per-request latency. Pass `keep_alive_connections: true`
+to reuse a thread-local connection (per host) backed by `net-http-persistent`:
+
+```ruby
+fcm = FCM.new(
+  GOOGLE_APPLICATION_CREDENTIALS_PATH,
+  FIREBASE_PROJECT_ID,
+  keep_alive_connections: true,
+  keep_alive_idle_timeout_seconds: 30, # optional, default 30
+  keep_alive_pool_size: 1              # optional, default 1
+)
+```
+
+`Net::HTTP` is not thread-safe, so connections are cached per `(thread, uri)`.
+Connections are dropped on error so half-closed sockets are not reused.
+
 ## Usage
 
 ## HTTP v1 API
