@@ -307,6 +307,13 @@ The guide to set up an iOS app to get notifications is here: [Setting up a FCM C
 
 ## ChangeLog
 
+### 2.0.3
+- Add opt-in HTTP keep-alive via `keep_alive_connections` [#145](https://github.com/decision-labs/fcm/pull/145)
+- Add configurable `open_timeout` via `http_options` [#146](https://github.com/decision-labs/fcm/pull/146)
+- Cover modern Ruby versions in the CI test matrix [#147](https://github.com/decision-labs/fcm/pull/147)
+- Replace Hound with RuboCop [#148](https://github.com/decision-labs/fcm/pull/148)
+- Drop unused `cgi` require and duplicate Gemfile `googleauth` [#149](https://github.com/decision-labs/fcm/pull/149)
+
 ### 2.0.2
 - Ensure JSON key path is an actual file or IO object before opening [#134](https://github.com/spacialdb/fcm/pull/134)
 

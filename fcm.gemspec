@@ -4,7 +4,7 @@ $LOAD_PATH.push File.expand_path("lib", __dir__)
 
 Gem::Specification.new do |s|
   s.name = "fcm"
-  s.version = "2.0.2"
+  s.version = "2.0.3"
   s.platform = Gem::Platform::RUBY
   s.authors = ["Kashif Rasul", "Shoaib Burq"]
   s.email = ["kashif@decision-labs.com", "shoaib@decision-labs.com"]
