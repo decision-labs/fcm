@@ -5,7 +5,16 @@ require "tempfile"
 
 describe FCM do
   let(:firebase_project_id) { 'test-project' }
-  let(:json_key_path) { 'path/to/json/key.json' }
+  let(:credentials_json) do
+    { type: 'service_account', project_id: firebase_project_id }.to_json
+  end
+  let(:json_key_file) do
+    Tempfile.new(['credentials', '.json']).tap do |file|
+      file.write(credentials_json)
+      file.rewind
+    end
+  end
+  let(:json_key_path) { json_key_file.path }
   let(:client) { FCM.new(json_key_path) }
 
   let(:mock_token) { "access_token" }
@@ -52,10 +61,6 @@ describe FCM do
   end
 
   before do
-    allow(client).to receive(:json_key)
-    allow(client).to receive(:extract_project_id)
-      .and_return(firebase_project_id)
-
     # Mock the Google::Auth::ServiceAccountCredentials
     allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds)
       .and_return(double(fetch_access_token!: { "access_token" => mock_token }))
@@ -67,22 +72,23 @@ describe FCM do
 
   describe "credentials path" do
     it "can be a path to a file" do
-      fcm = described_class.new("README.md")
+      fcm = described_class.new(json_key_path)
       expect(fcm.__send__(:json_key).class).to eq(File)
     end
 
     it "raises an error when passed a large path" do
       expect do
-        described_class.new(large_file_name).__send__(:json_key)
+        described_class.new(large_file_name)
       end.to raise_error(creds_error)
     end
 
     it "can be an IO object" do
-      fcm = described_class.new(StringIO.new("hey"))
+      fcm = described_class.new(StringIO.new(credentials_json))
       expect(fcm.__send__(:json_key).class).to eq(StringIO)
 
       temp_file = Tempfile.new("hello_world.json")
       temp_file.write(json_credentials)
+      temp_file.rewind
       fcm_with_temp_file = described_class.new(temp_file)
 
       expect do
@@ -94,29 +100,31 @@ describe FCM do
 
     it "raises an error when passed a non IO-like object" do
       expect do
-        described_class.new(nil, "", {}).__send__(:json_key)
+        described_class.new(nil, "", {})
       end.to raise_error(creds_error, "credentials must be " \
                                       "an IO-like object or path. You passed nil.")
 
       expect do
-        described_class.new(json_credentials, "", {}).__send__(:json_key)
+        described_class.new(json_credentials, "", {})
       end.to raise_error(creds_error, "credentials must be " \
                                       "an IO-like object or path. You passed a String.")
 
       expect do
-        described_class.new({}, "", {}).__send__(:json_key)
+        described_class.new({}, "", {})
       end.to raise_error(creds_error, "credentials must be " \
                                       "an IO-like object or path. You passed a Hash.")
     end
 
     it "raises an error when passed a non-existent credentials file path" do
-      fcm = described_class.new("spec/fake_credentials.json", "", {})
-      expect { fcm.__send__(:json_key) }.to raise_error(creds_error)
+      expect do
+        described_class.new("spec/fake_credentials.json", "", {})
+      end.to raise_error(creds_error)
     end
 
     it "raises an error when passed a string of a file that does not exist" do
-      fcm = described_class.new("example.txt", "", {})
-      expect { fcm.__send__(:json_key) }.to raise_error(creds_error)
+      expect do
+        described_class.new("example.txt", "", {})
+      end.to raise_error(creds_error)
     end
   end
 
@@ -125,7 +133,6 @@ describe FCM do
 
     it 'prefers the explicit project name over the credentials file' do
       client = silence_warnings { FCM.new(json_key_path, project_name) }
-      expect(client).not_to receive(:extract_project_id)
       expect(client.__send__(:firebase_project_id)).to eq(project_name)
     end
 
@@ -169,6 +176,29 @@ describe FCM do
       credentials = StringIO.new({ project_id: 'io-project' }.to_json)
       fcm = FCM.new(credentials)
       expect(fcm.__send__(:firebase_project_id)).to eq('io-project')
+    end
+
+    it 'resolves the project id during initialization' do
+      fcm = FCM.new(json_key_path)
+      json_key_file.unlink
+      expect(fcm.__send__(:firebase_project_id)).to eq(firebase_project_id)
+    end
+
+    it 'raises MissingProjectIdError when the credentials file has no project_id' do
+      credentials = StringIO.new({ type: 'service_account' }.to_json)
+      expect { FCM.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
+    end
+
+    it 'raises MissingProjectIdError when the credentials project_id is blank' do
+      credentials = StringIO.new(
+        { type: 'service_account', project_id: '' }.to_json
+      )
+      expect { FCM.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
+    end
+
+    it 'raises InvalidCredentialError when the credentials file is not valid JSON' do
+      expect { FCM.new(StringIO.new('not-json')) }
+        .to raise_error(FCM::InvalidCredentialError, /not valid JSON/)
     end
   end
 
@@ -311,8 +341,8 @@ describe FCM do
       it_behaves_like "succesfuly send notification"
     end
 
-    context 'when firebase_project_id is empty' do
-      let(:firebase_project_id) { '' }
+    context 'when the credentials file has no project_id' do
+      let(:credentials_json) { { type: 'service_account' }.to_json }
       let(:send_v1_params) do
         {
           "token" => "4sdsx",
@@ -323,8 +353,9 @@ describe FCM do
         }
       end
 
-      it "does not send notification" do
-        client.send_v1(send_v1_params)
+      it "raises MissingProjectIdError instead of silently skipping the send" do
+        expect { client.send_v1(send_v1_params) }
+          .to raise_error(FCM::MissingProjectIdError)
         stub_fcm_send_v1_request.should_not have_been_requested
       end
     end

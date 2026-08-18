@@ -29,7 +29,7 @@ To use this gem, you need to instantiate a client with your firebase credentials
 fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH)
 ```
 
-**Note:** The Firebase project ID is automatically extracted from your Firebase service credentials file.
+**Note:** The Firebase project ID is automatically extracted from your Firebase service credentials file. The client fails fast on instantiation: `FCM::MissingProjectIdError` is raised when the credentials file has no (or a blank) `project_id`, and `FCM::InvalidCredentialError` is raised when the credentials cannot be read or parsed.
 
 Passing the project name explicitly is still supported for backwards compatibility, but deprecated:
 
