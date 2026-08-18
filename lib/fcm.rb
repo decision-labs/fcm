@@ -203,6 +203,16 @@ class FCM
     end
   end
 
+  def jwt_token
+    scope = "https://www.googleapis.com/auth/firebase.messaging"
+    @authorizer ||= Google::Auth::ServiceAccountCredentials.make_creds(
+      json_key_io: json_key,
+      scope: scope
+    )
+    token = @authorizer.fetch_access_token!
+    token["access_token"]
+  end
+
   private
 
   def for_uri(uri, extra_headers = {}, &block)
@@ -349,16 +359,6 @@ class FCM
   def validate_condition_topics?(condition)
     topics = condition.scan(/(?:^|\S|\s)'([^']*?)'(?:$|\S|\s)/).flatten
     topics.all? { |topic| topic.gsub(TOPIC_REGEX, "").empty? }
-  end
-
-  def jwt_token
-    scope = "https://www.googleapis.com/auth/firebase.messaging"
-    @authorizer ||= Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: json_key,
-      scope: scope
-    )
-    token = @authorizer.fetch_access_token!
-    token["access_token"]
   end
 
   def raise_credentials_error(param)
