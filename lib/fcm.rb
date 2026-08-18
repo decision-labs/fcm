@@ -17,10 +17,11 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
-  def initialize(json_key_path = "", project_name = "", http_options = {})
+  def initialize(json_key_path = "", project_name = "", http_options = {}, faraday_configurer = nil)
     @json_key_path = json_key_path
     @project_name = project_name
     @http_options = http_options
+    @faraday_configurer = faraday_configurer
     @keep_alive_connections = http_options.fetch(:keep_alive_connections, false)
     @keep_alive_idle_timeout_seconds =
       http_options.fetch(:keep_alive_idle_timeout_seconds, DEFAULT_KEEP_ALIVE_IDLE_TIMEOUT_SECONDS)
@@ -217,6 +218,7 @@ class FCM
     ::Faraday.new(url: uri, request: request_options) do |faraday|
       faraday.adapter Faraday.default_adapter
       apply_default_headers(faraday, extra_headers)
+      @faraday_configurer.call(faraday) if @faraday_configurer
     end
   end
 
@@ -272,6 +274,7 @@ class FCM
       faraday.adapter :net_http_persistent, pool_size: @keep_alive_pool_size do |http|
         http.idle_timeout = @keep_alive_idle_timeout_seconds
       end
+      @faraday_configurer.call(faraday) if @faraday_configurer
     end
   end
 
