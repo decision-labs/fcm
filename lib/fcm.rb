@@ -6,6 +6,7 @@ require "googleauth"
 
 class FCM
   class InvalidCredentialError < StandardError; end
+  class MissingProjectIdError < StandardError; end
 
   BASE_URI = "https://fcm.googleapis.com"
   BASE_URI_V1 = "https://fcm.googleapis.com/v1/projects/"
@@ -17,7 +18,29 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
+  # Service account credentials file schema (JSON format):
+  # {
+  #   "type": "service_account",
+  #   "project_id": "your-project-id",
+  #   "private_key_id": "key-id",
+  #   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  #   "client_email": "firebase-adminsdk@your-project-id.iam.gserviceaccount.com",
+  #   "client_id": "client-id",
+  #   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  #   "token_uri": "https://oauth2.googleapis.com/token",
+  #   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  #   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk%40your-project-id.iam.gserviceaccount.com",
+  #   "universe_domain": "googleapis.com"
+  # }
+  # The project_id field is automatically extracted from this file for FCM API
+  # calls; initialization fails with MissingProjectIdError when it is absent.
+  #
   def initialize(json_key_path = "", project_name = "", http_options = {})
+    if project_name.is_a?(Hash) && http_options.empty?
+      http_options = project_name
+      project_name = ""
+    end
+
     @json_key_path = json_key_path
     @project_name = project_name
     @http_options = http_options
@@ -31,9 +54,17 @@ class FCM
     @thread_connections_key = :"_fcm_connections_#{object_id}"
 
     require "faraday/net_http_persistent" if @keep_alive_connections
+
+    @firebase_project_id = resolve_project_id
+
+    return if project_name.to_s.empty?
+
+    warn "[DEPRECATION] Passing `project_name` to FCM.new is deprecated and " \
+         "will be removed in a future release. The project id is now read " \
+         "from the service account credentials file."
   end
 
-  # See https://firebase.google.com/docs/cloud-messaging/send-message
+  # See https://firebase.google.com/docs/cloud-messaging/send/v1-api
   # {
   #   "token": "4sdsx",
   #   "notification": {
@@ -57,17 +88,15 @@ class FCM
   #     }
   #   }
   # }
-  # fcm = FCM.new(json_key_path, project_name)
+  # fcm = FCM.new(json_key_path)
   # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    return if @project_name.empty?
-
     post_body = { message: message }
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", post_body.to_json
+        "#{firebase_project_id}/messages:send", post_body.to_json
       )
       build_response(response)
     end
@@ -184,7 +213,7 @@ class FCM
 
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
+        "#{firebase_project_id}/messages:send", body.to_json
       )
       build_response(response)
     end
@@ -197,7 +226,7 @@ class FCM
 
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
+        "#{firebase_project_id}/messages:send", body.to_json
       )
       build_response(response)
     end
@@ -387,5 +416,35 @@ class FCM
                   else
                     raise_credentials_error(@json_key_path)
                   end
+  end
+
+  attr_reader :firebase_project_id
+
+  def resolve_project_id
+    project_id = @project_name.to_s.empty? ? extract_project_id : @project_name
+    return project_id unless project_id.to_s.empty?
+
+    raise MissingProjectIdError,
+          "the project id resolved to an empty value; provide a service " \
+          "account credentials file with a project_id field"
+  end
+
+  def extract_project_id
+    JSON.parse(read_json_key).fetch("project_id")
+  rescue JSON::ParserError
+    raise InvalidCredentialError,
+          "the service account credentials file is not valid JSON"
+  rescue KeyError
+    raise MissingProjectIdError,
+          "the service account credentials file has no project_id field; " \
+          "re-download the service account key from the Firebase console"
+  rescue Errno::ENOENT => e
+    raise InvalidCredentialError,
+          "service account credentials file not found: #{e.message}"
+  end
+
+  def read_json_key
+    io = json_key
+    io.read.tap { io.rewind if io.respond_to?(:rewind) }
   end
 end

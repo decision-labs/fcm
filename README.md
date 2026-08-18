@@ -26,11 +26,18 @@ A version of supported Ruby, currently:
 To use this gem, you need to instantiate a client with your firebase credentials:
 
 ```ruby
-fcm = FCM.new(
-  GOOGLE_APPLICATION_CREDENTIALS_PATH,
-  FIREBASE_PROJECT_ID
-)
+fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH)
 ```
+
+**Note:** The Firebase project ID is automatically extracted from your Firebase service credentials file. The client fails fast on instantiation: `FCM::MissingProjectIdError` is raised when the credentials file has no (or a blank) `project_id`, and `FCM::InvalidCredentialError` is raised when the credentials cannot be read or parsed.
+
+Passing the project name explicitly is still supported for backwards compatibility, but deprecated:
+
+```ruby
+fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH, FIREBASE_PROJECT_ID) # deprecated
+```
+
+When provided, the explicit project name takes precedence over the `project_id` from the credentials file. This argument will be removed in a future major release.
 
 ## About the `GOOGLE_APPLICATION_CREDENTIALS_PATH`
 The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase credentials.
@@ -38,21 +45,16 @@ The `GOOGLE_APPLICATION_CREDENTIALS_PATH` is meant to contain your firebase cred
 The easiest way to provide them is to pass here an absolute path to a file with your credentials:
 
 ```ruby
-fcm = FCM.new(
-  '/path/to/credentials.json',
-  FIREBASE_PROJECT_ID
-)
+fcm = FCM.new('/path/to/credentials.json')
 ```
 
 As per their secret nature, you might not want to have them in your repository. In that case, another supported solution is to pass a `StringIO` that contains your credentials:
 
 ```ruby
-fcm = FCM.new(
-  StringIO.new(ENV.fetch('FIREBASE_CREDENTIALS')),
-  FIREBASE_PROJECT_ID
-)
-
+fcm = FCM.new(StringIO.new(ENV.fetch('FIREBASE_CREDENTIALS')))
 ```
+
+The gem will automatically extract the `project_id` from your Firebase service credentials file.
 
 ## Request timeouts
 
@@ -77,7 +79,6 @@ to reuse a thread-local connection (per host) backed by `net-http-persistent`:
 ```ruby
 fcm = FCM.new(
   GOOGLE_APPLICATION_CREDENTIALS_PATH,
-  FIREBASE_PROJECT_ID,
   keep_alive_connections: true,
   keep_alive_idle_timeout_seconds: 30, # optional, default 30
   keep_alive_pool_size: 1              # optional, default 1
@@ -94,10 +95,7 @@ Connections are dropped on error so half-closed sockets are not reused.
 To migrate to HTTP v1 see: https://firebase.google.com/docs/cloud-messaging/migrate-v1
 
 ```ruby
-fcm = FCM.new(
-  GOOGLE_APPLICATION_CREDENTIALS_PATH,
-  FIREBASE_PROJECT_ID
-)
+fcm = FCM.new(GOOGLE_APPLICATION_CREDENTIALS_PATH)
 message = {
   'token': "000iddqd", # send to a specific device
   # 'topic': "yourTopic",
@@ -141,8 +139,7 @@ https://firebase.google.com/docs/cloud-messaging/android/device-group#managing_d
 
 Then you will need a notification key which you can create for a particular `key_name` which needs to be uniquely named per app in case you have multiple apps for the same `project_id`. This ensures that notifications only go to the intended target app. The `create` method will do this and return the token `notification_key`, that represents the device group, in the response:
 
-`project_id` is the SENDER_ID in your cloud settings.
-https://firebase.google.com/docs/cloud-messaging/concept-options#senderid
+**Note:** The `project_id` parameter used in device group management is your Firebase project's sender ID, which can be found in your Firebase project settings under Cloud Messaging.
 
 ```ruby
 params = { key_name: "appUser-Chris",
