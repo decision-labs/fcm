@@ -4,7 +4,7 @@ require "spec_helper"
 require "tempfile"
 
 describe FCM do
-  let(:project_name) { "test-project" }
+  let(:firebase_project_id) { "test-project" }
   let(:json_key_path) { "path/to/json/key.json" }
   let(:client) { described_class.new(json_key_path) }
 
@@ -53,6 +53,8 @@ describe FCM do
 
   before do
     allow(client).to receive(:json_key)
+    allow(client).to receive(:extract_project_id)
+      .and_return(firebase_project_id)
 
     # Mock the Google::Auth::ServiceAccountCredentials
     allow(Google::Auth::ServiceAccountCredentials).to receive(:make_creds)
@@ -118,10 +120,62 @@ describe FCM do
     end
   end
 
-  describe "#send_v1 or #send_notification_v1" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+  describe 'deprecated project_name argument' do
+    let(:project_name) { 'explicit-project' }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    it 'prefers the explicit project name over the credentials file' do
+      client = silence_warnings { FCM.new(json_key_path, project_name) }
+      expect(client).not_to receive(:extract_project_id)
+      expect(client.__send__(:firebase_project_id)).to eq(project_name)
+    end
+
+    it 'keeps accepting http_options as the third argument' do
+      client = silence_warnings do
+        FCM.new(json_key_path, project_name, timeout: 10)
+      end
+      expect(client.instance_variable_get(:@http_options)).to eq(timeout: 10)
+    end
+
+    it 'emits a deprecation warning when project_name is passed' do
+      expect { FCM.new(json_key_path, project_name) }
+        .to output(/DEPRECATION.*project_name/).to_stderr
+    end
+
+    it 'does not warn when project_name is omitted' do
+      expect { FCM.new(json_key_path) }.not_to output.to_stderr
+    end
+
+    it 'treats a Hash in the project_name position as http_options' do
+      client = FCM.new(json_key_path, timeout: 7)
+      expect(client.instance_variable_get(:@http_options)).to eq(timeout: 7)
+      expect(client.instance_variable_get(:@project_name)).to eq('')
+    end
+
+    it 'does not warn when a Hash is passed in the project_name position' do
+      expect { FCM.new(json_key_path, timeout: 7) }.not_to output.to_stderr
+    end
+
+    def silence_warnings
+      original_stderr = $stderr
+      $stderr = StringIO.new
+      yield
+    ensure
+      $stderr = original_stderr
+    end
+  end
+
+  describe 'firebase project id extraction' do
+    it 'reads project_id from an IO credentials object' do
+      credentials = StringIO.new({ project_id: 'io-project' }.to_json)
+      fcm = FCM.new(credentials)
+      expect(fcm.__send__(:firebase_project_id)).to eq('io-project')
+    end
+  end
+
+  describe "#send_v1 or #send_notification_v1" do
+    let(:client) { described_class.new(json_key_path) }
+
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
     let(:status_code) { 200 }
 
     let(:stub_fcm_send_v1_request) do
@@ -258,8 +312,8 @@ describe FCM do
       it_behaves_like "succesfuly send notification"
     end
 
-    context "when project_name is empty" do
-      let(:project_name) { "" }
+    context 'when firebase_project_id is empty' do
+      let(:firebase_project_id) { '' }
       let(:send_v1_params) do
         {
           "token" => "4sdsx",
@@ -330,9 +384,9 @@ describe FCM do
   end
 
   describe "#send_to_topic" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+    let(:client) { described_class.new(json_key_path) }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
 
     let(:topic) { "news" }
     let(:params) do
@@ -381,9 +435,9 @@ describe FCM do
   end
 
   describe "#send_to_topic_condition" do
-    let(:client) { described_class.new(json_key_path, project_name) }
+    let(:client) { described_class.new(json_key_path) }
 
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
 
     let(:topic_condition) { "'foo' in topics" }
     let(:params) do
@@ -518,8 +572,8 @@ describe FCM do
   end
 
   describe "keep_alive_connections" do
-    let(:client) { described_class.new(json_key_path, project_name, keep_alive_connections: true) }
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:client) { described_class.new(json_key_path, keep_alive_connections: true) }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
     let(:send_v1_params) { { "token" => "token", "notification" => { "title" => "hi" } } }
 
     before do
@@ -548,8 +602,9 @@ describe FCM do
     end
 
     it "does not share connections across FCM instances" do
-      other_client = described_class.new(json_key_path, project_name, keep_alive_connections: true)
+      other_client = described_class.new(json_key_path, keep_alive_connections: true)
       allow(other_client).to receive(:json_key)
+      allow(other_client).to receive(:extract_project_id).and_return(firebase_project_id)
 
       client.send_v1(send_v1_params)
       other_client.send_v1(send_v1_params)
@@ -559,8 +614,9 @@ describe FCM do
     end
 
     it "falls back to one-shot connections when disabled" do
-      one_shot_client = described_class.new(json_key_path, project_name)
+      one_shot_client = described_class.new(json_key_path)
       allow(one_shot_client).to receive(:json_key)
+      allow(one_shot_client).to receive(:extract_project_id).and_return(firebase_project_id)
       one_shot_client.send_v1(send_v1_params)
 
       expect(one_shot_client.__send__(:thread_connections)).to be_empty
@@ -569,7 +625,7 @@ describe FCM do
 
   describe "request timeouts" do
     it "defaults timeout and open_timeout to DEFAULT_TIMEOUT" do
-      fcm = described_class.new(json_key_path, project_name)
+      fcm = described_class.new(json_key_path)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
@@ -579,7 +635,7 @@ describe FCM do
     end
 
     it "honours :timeout and :open_timeout from http_options" do
-      fcm = described_class.new(json_key_path, project_name, timeout: 7, open_timeout: 3)
+      fcm = described_class.new(json_key_path, timeout: 7, open_timeout: 3)
       allow(fcm).to receive(:json_key)
 
       fcm.__send__(:for_uri, FCM::BASE_URI_V1) do |conn|
@@ -590,7 +646,7 @@ describe FCM do
 
     it "honours :timeout and :open_timeout on keep-alive connections" do
       fcm = described_class.new(
-        json_key_path, project_name, keep_alive_connections: true, timeout: 7, open_timeout: 3
+        json_key_path, keep_alive_connections: true, timeout: 7, open_timeout: 3
       )
       allow(fcm).to receive(:json_key)
 

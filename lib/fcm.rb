@@ -17,7 +17,28 @@ class FCM
   INSTANCE_ID_API = "https://iid.googleapis.com"
   TOPIC_REGEX = /[a-zA-Z0-9\-_.~%]+/.freeze
 
+  # Service account credentials file schema (JSON format):
+  # {
+  #   "type": "service_account",
+  #   "project_id": "your-project-id",
+  #   "private_key_id": "key-id",
+  #   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  #   "client_email": "firebase-adminsdk@your-project-id.iam.gserviceaccount.com",
+  #   "client_id": "client-id",
+  #   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  #   "token_uri": "https://oauth2.googleapis.com/token",
+  #   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  #   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk%40your-project-id.iam.gserviceaccount.com",
+  #   "universe_domain": "googleapis.com"
+  # }
+  # The project_id field is automatically extracted from this file for FCM API calls.
+  #
   def initialize(json_key_path = "", project_name = "", http_options = {})
+    if project_name.is_a?(Hash) && http_options.empty?
+      http_options = project_name
+      project_name = ""
+    end
+
     @json_key_path = json_key_path
     @project_name = project_name
     @http_options = http_options
@@ -31,9 +52,15 @@ class FCM
     @thread_connections_key = :"_fcm_connections_#{object_id}"
 
     require "faraday/net_http_persistent" if @keep_alive_connections
+
+    return if project_name.to_s.empty?
+
+    warn "[DEPRECATION] Passing `project_name` to FCM.new is deprecated and " \
+         "will be removed in a future release. The project id is now read " \
+         "from the service account credentials file."
   end
 
-  # See https://firebase.google.com/docs/cloud-messaging/send-message
+  # See https://firebase.google.com/docs/cloud-messaging/send/v1-api
   # {
   #   "token": "4sdsx",
   #   "notification": {
@@ -57,17 +84,17 @@ class FCM
   #     }
   #   }
   # }
-  # fcm = FCM.new(json_key_path, project_name)
+  # fcm = FCM.new(json_key_path)
   # fcm.send_v1(
   #    { "token": "4sdsx",, "to" : "notification": {}.. }
   # )
   def send_notification_v1(message)
-    return if @project_name.empty?
+    return if firebase_project_id.empty?
 
     post_body = { message: message }
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", post_body.to_json
+        "#{firebase_project_id}/messages:send", post_body.to_json
       )
       build_response(response)
     end
@@ -184,7 +211,7 @@ class FCM
 
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
+        "#{firebase_project_id}/messages:send", body.to_json
       )
       build_response(response)
     end
@@ -197,7 +224,7 @@ class FCM
 
     for_uri(BASE_URI_V1) do |connection|
       response = connection.post(
-        "#{@project_name}/messages:send", body.to_json
+        "#{firebase_project_id}/messages:send", body.to_json
       )
       build_response(response)
     end
@@ -387,5 +414,28 @@ class FCM
                   else
                     raise_credentials_error(@json_key_path)
                   end
+  end
+
+  def firebase_project_id
+    @firebase_project_id ||= if @project_name.to_s.empty?
+                               extract_project_id
+                             else
+                               @project_name
+                             end
+  end
+
+  def extract_project_id
+    return "" if @json_key_path.nil? || @json_key_path == ""
+
+    json_content = if @json_key_path.respond_to?(:read)
+                     @json_key_path.read.tap { @json_key_path.rewind }
+                   else
+                     File.read(@json_key_path)
+                   end
+
+    credentials = JSON.parse(json_content)
+    credentials["project_id"] || ""
+  rescue JSON::ParserError, Errno::ENOENT
+    ""
   end
 end
