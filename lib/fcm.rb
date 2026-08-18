@@ -215,7 +215,6 @@ class FCM
         )
         build_response(response)
       end
-    end
   end
 
   def send_to_topic_condition(condition, options = {})
@@ -229,7 +228,6 @@ class FCM
         )
         build_response(response)
       end
-    end
   end
 
   private

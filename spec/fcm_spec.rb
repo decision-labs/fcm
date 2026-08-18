@@ -174,7 +174,6 @@ describe FCM do
 
   describe "#send_v1 or #send_notification_v1" do
     let(:client) { described_class.new(json_key_path) }
-
     let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
     let(:status_code) { 200 }
 
@@ -572,8 +571,8 @@ describe FCM do
   end
 
   describe "keep_alive_connections" do
-    let(:client) { described_class.new(json_key_path, project_name, keep_alive_connections: true) }
-    let(:uri) { "#{FCM::BASE_URI_V1}#{project_name}/messages:send" }
+    let(:client) { described_class.new(json_key_path, keep_alive_connections: true) }
+    let(:uri) { "#{FCM::BASE_URI_V1}#{firebase_project_id}/messages:send" }
     let(:send_v1_params) { { "token" => "token", "notification" => { "title" => "hi" } } }
 
     before do
@@ -602,7 +601,7 @@ describe FCM do
     end
 
     it "does not share connections across FCM instances" do
-      other_client = described_class.new(json_key_path, project_name, keep_alive_connections: true)
+      other_client = described_class.new(json_key_path, keep_alive_connections: true)
       allow(other_client).to receive(:json_key)
 
       client.send_v1(send_v1_params)
@@ -613,7 +612,7 @@ describe FCM do
     end
 
     it "falls back to one-shot connections when disabled" do
-      one_shot_client = described_class.new(json_key_path, project_name)
+      one_shot_client = described_class.new(json_key_path)
       allow(one_shot_client).to receive(:json_key)
       one_shot_client.send_v1(send_v1_params)
 
@@ -644,7 +643,7 @@ describe FCM do
 
     it "honours :timeout and :open_timeout on keep-alive connections" do
       fcm = described_class.new(
-        json_key_path, project_name, keep_alive_connections: true, timeout: 7, open_timeout: 3
+        json_key_path, keep_alive_connections: true, timeout: 7, open_timeout: 3
       )
       allow(fcm).to receive(:json_key)
 
