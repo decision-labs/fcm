@@ -4,18 +4,18 @@ require "spec_helper"
 require "tempfile"
 
 describe FCM do
-  let(:firebase_project_id) { 'test-project' }
+  let(:firebase_project_id) { "test-project" }
   let(:credentials_json) do
-    { type: 'service_account', project_id: firebase_project_id }.to_json
+    { type: "service_account", project_id: firebase_project_id }.to_json
   end
   let(:json_key_file) do
-    Tempfile.new(['credentials', '.json']).tap do |file|
+    Tempfile.new(["credentials", ".json"]).tap do |file|
       file.write(credentials_json)
       file.rewind
     end
   end
   let(:json_key_path) { json_key_file.path }
-  let(:client) { FCM.new(json_key_path) }
+  let(:client) { described_class.new(json_key_path) }
 
   let(:mock_token) { "access_token" }
   let(:mock_headers) do
@@ -128,38 +128,38 @@ describe FCM do
     end
   end
 
-  describe 'deprecated project_name argument' do
-    let(:project_name) { 'explicit-project' }
+  describe "deprecated project_name argument" do
+    let(:project_name) { "explicit-project" }
 
-    it 'prefers the explicit project name over the credentials file' do
-      client = silence_warnings { FCM.new(json_key_path, project_name) }
+    it "prefers the explicit project name over the credentials file" do
+      client = silence_warnings { described_class.new(json_key_path, project_name) }
       expect(client.__send__(:firebase_project_id)).to eq(project_name)
     end
 
-    it 'keeps accepting http_options as the third argument' do
+    it "keeps accepting http_options as the third argument" do
       client = silence_warnings do
-        FCM.new(json_key_path, project_name, timeout: 10)
+        described_class.new(json_key_path, project_name, timeout: 10)
       end
       expect(client.instance_variable_get(:@http_options)).to eq(timeout: 10)
     end
 
-    it 'emits a deprecation warning when project_name is passed' do
-      expect { FCM.new(json_key_path, project_name) }
+    it "emits a deprecation warning when project_name is passed" do
+      expect { described_class.new(json_key_path, project_name) }
         .to output(/DEPRECATION.*project_name/).to_stderr
     end
 
-    it 'does not warn when project_name is omitted' do
-      expect { FCM.new(json_key_path) }.not_to output.to_stderr
+    it "does not warn when project_name is omitted" do
+      expect { described_class.new(json_key_path) }.not_to output.to_stderr
     end
 
-    it 'treats a Hash in the project_name position as http_options' do
-      client = FCM.new(json_key_path, timeout: 7)
+    it "treats a Hash in the project_name position as http_options" do
+      client = described_class.new(json_key_path, timeout: 7)
       expect(client.instance_variable_get(:@http_options)).to eq(timeout: 7)
-      expect(client.instance_variable_get(:@project_name)).to eq('')
+      expect(client.instance_variable_get(:@project_name)).to eq("")
     end
 
-    it 'does not warn when a Hash is passed in the project_name position' do
-      expect { FCM.new(json_key_path, timeout: 7) }.not_to output.to_stderr
+    it "does not warn when a Hash is passed in the project_name position" do
+      expect { described_class.new(json_key_path, timeout: 7) }.not_to output.to_stderr
     end
 
     def silence_warnings
@@ -171,33 +171,33 @@ describe FCM do
     end
   end
 
-  describe 'firebase project id extraction' do
-    it 'reads project_id from an IO credentials object' do
-      credentials = StringIO.new({ project_id: 'io-project' }.to_json)
-      fcm = FCM.new(credentials)
-      expect(fcm.__send__(:firebase_project_id)).to eq('io-project')
+  describe "firebase project id extraction" do
+    it "reads project_id from an IO credentials object" do
+      credentials = StringIO.new({ project_id: "io-project" }.to_json)
+      fcm = described_class.new(credentials)
+      expect(fcm.__send__(:firebase_project_id)).to eq("io-project")
     end
 
-    it 'resolves the project id during initialization' do
-      fcm = FCM.new(json_key_path)
+    it "resolves the project id during initialization" do
+      fcm = described_class.new(json_key_path)
       json_key_file.unlink
       expect(fcm.__send__(:firebase_project_id)).to eq(firebase_project_id)
     end
 
-    it 'raises MissingProjectIdError when the credentials file has no project_id' do
-      credentials = StringIO.new({ type: 'service_account' }.to_json)
-      expect { FCM.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
+    it "raises MissingProjectIdError when the credentials file has no project_id" do
+      credentials = StringIO.new({ type: "service_account" }.to_json)
+      expect { described_class.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
     end
 
-    it 'raises MissingProjectIdError when the credentials project_id is blank' do
+    it "raises MissingProjectIdError when the credentials project_id is blank" do
       credentials = StringIO.new(
-        { type: 'service_account', project_id: '' }.to_json
+        { type: "service_account", project_id: "" }.to_json
       )
-      expect { FCM.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
+      expect { described_class.new(credentials) }.to raise_error(FCM::MissingProjectIdError)
     end
 
-    it 'raises InvalidCredentialError when the credentials file is not valid JSON' do
-      expect { FCM.new(StringIO.new('not-json')) }
+    it "raises InvalidCredentialError when the credentials file is not valid JSON" do
+      expect { described_class.new(StringIO.new("not-json")) }
         .to raise_error(FCM::InvalidCredentialError, /not valid JSON/)
     end
   end
@@ -341,8 +341,8 @@ describe FCM do
       it_behaves_like "succesfuly send notification"
     end
 
-    context 'when the credentials file has no project_id' do
-      let(:credentials_json) { { type: 'service_account' }.to_json }
+    context "when the credentials file has no project_id" do
+      let(:credentials_json) { { type: "service_account" }.to_json }
       let(:send_v1_params) do
         {
           "token" => "4sdsx",
